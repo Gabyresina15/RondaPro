@@ -10,6 +10,7 @@ import { GetRonda } from './application/rondas/GetRonda.js';
 import { GetRondaPhoto } from './application/rondas/GetRondaPhoto.js';
 import { ListRondas } from './application/rondas/ListRondas.js';
 import { ResolveFinding } from './application/rondas/ResolveFinding.js';
+import { UpdateFinding } from './application/rondas/UpdateFinding.js';
 import { SaveRondaAnswers } from './application/rondas/SaveRondaAnswers.js';
 import { StartRonda } from './application/rondas/StartRonda.js';
 import { CreateSite } from './application/sites/CreateSite.js';
@@ -92,6 +93,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     getRondaPhoto: new GetRondaPhoto(rondas, photos),
     addFinding: new AddFinding(rondas),
     resolveFinding: new ResolveFinding(rondas),
+    updateFinding: new UpdateFinding(rondas),
     createSite: new CreateSite(sites),
     listSites: new ListSites(sites),
     getSite: new GetSite(sites),

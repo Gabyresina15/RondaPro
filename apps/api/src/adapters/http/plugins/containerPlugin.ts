@@ -10,6 +10,7 @@ import type { GetRonda } from '../../../application/rondas/GetRonda.js';
 import type { GetRondaPhoto } from '../../../application/rondas/GetRondaPhoto.js';
 import type { ListRondas } from '../../../application/rondas/ListRondas.js';
 import type { ResolveFinding } from '../../../application/rondas/ResolveFinding.js';
+import type { UpdateFinding } from '../../../application/rondas/UpdateFinding.js';
 import type { SaveRondaAnswers } from '../../../application/rondas/SaveRondaAnswers.js';
 import type { StartRonda } from '../../../application/rondas/StartRonda.js';
 import type { CreateSite } from '../../../application/sites/CreateSite.js';
@@ -40,6 +41,7 @@ export interface AppContainer {
   getRondaPhoto: GetRondaPhoto;
   addFinding: AddFinding;
   resolveFinding: ResolveFinding;
+  updateFinding: UpdateFinding;
   createSite: CreateSite;
   listSites: ListSites;
   getSite: GetSite;
