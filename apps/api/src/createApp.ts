@@ -32,6 +32,7 @@ import { BcryptPasswordHasher } from './adapters/security/BcryptPasswordHasher.j
 import { JwtTokenService } from './adapters/security/JwtTokenService.js';
 import { LocalPhotoStorage } from './adapters/storage/LocalPhotoStorage.js';
 import { HeuristicSummaryGenerator } from './adapters/llm/HeuristicSummaryGenerator.js';
+import { GeminiSummaryGenerator } from './adapters/llm/GeminiSummaryGenerator.js';
 import {
   FallbackSummaryGenerator,
   OpenAiSummaryGenerator,
@@ -49,6 +50,16 @@ import type { SummaryGenerator } from './domain/ports/SummaryGenerator.js';
 
 function buildSummaryGenerator(config: AppConfig): SummaryGenerator {
   const heuristic = new HeuristicSummaryGenerator();
+  if (config.GEMINI_API_KEY) {
+    return new FallbackSummaryGenerator(
+      new GeminiSummaryGenerator({
+        apiKey: config.GEMINI_API_KEY,
+        model: config.GEMINI_MODEL,
+        baseUrl: config.GEMINI_BASE_URL,
+      }),
+      heuristic,
+    );
+  }
   if (!config.OPENAI_API_KEY) {
     return heuristic;
   }
