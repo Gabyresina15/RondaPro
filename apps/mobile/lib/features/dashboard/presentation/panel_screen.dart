@@ -16,6 +16,9 @@ class _PanelScreenState extends State<PanelScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
       context.read<DashboardController>().load();
       context.read<SitesController>().load();
     });
@@ -37,24 +40,26 @@ class _PanelScreenState extends State<PanelScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('New site'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: address,
-                decoration: const InputDecoration(labelText: 'Address'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: notes,
-                decoration: const InputDecoration(labelText: 'Notes'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: name,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: address,
+                  decoration: const InputDecoration(labelText: 'Address'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: notes,
+                  decoration: const InputDecoration(labelText: 'Notes'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -101,38 +106,48 @@ class _PanelScreenState extends State<PanelScreen> {
           if (dashboard.loading && stats == null)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator()),
+              child: SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             )
           else if (dashboard.error != null && stats == null)
-            Text(dashboard.error!)
+            Text(dashboard.error ?? 'Could not load dashboard')
           else if (stats != null)
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Column(
               children: [
-                _StatChip(label: 'Sites', value: '${stats.sitesCount}'),
-                _StatChip(label: 'Templates', value: '${stats.templatesCount}'),
-                _StatChip(label: 'In progress', value: '${stats.rondasInProgress}'),
-                _StatChip(label: 'Completed', value: '${stats.rondasCompleted}'),
-                _StatChip(label: 'Photos', value: '${stats.photosTotal}'),
-                _StatChip(label: 'Open findings', value: '${stats.findingsOpen}'),
-                _StatChip(label: 'High severity', value: '${stats.findingsHigh}'),
+                _StatTile(label: 'Sites', value: '${stats.sitesCount}'),
+                _StatTile(label: 'Templates', value: '${stats.templatesCount}'),
+                _StatTile(
+                  label: 'In progress',
+                  value: '${stats.rondasInProgress}',
+                ),
+                _StatTile(
+                  label: 'Completed',
+                  value: '${stats.rondasCompleted}',
+                ),
+                _StatTile(label: 'Photos', value: '${stats.photosTotal}'),
+                _StatTile(
+                  label: 'Open findings',
+                  value: '${stats.findingsOpen}',
+                ),
+                _StatTile(
+                  label: 'High severity',
+                  value: '${stats.findingsHigh}',
+                ),
               ],
             ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Text('Sites', style: Theme.of(context).textTheme.titleLarge),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: _createSite,
-                icon: const Icon(Icons.add),
-                label: const Text('Add'),
-              ),
-            ],
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('Sites', style: Theme.of(context).textTheme.titleLarge),
+            trailing: IconButton(
+              tooltip: 'Add site',
+              onPressed: _createSite,
+              icon: const Icon(Icons.add),
+            ),
           ),
-          const SizedBox(height: 8),
           if (sites.items.isEmpty)
             const Text('No sites yet. Add a store or facility.')
           else
@@ -153,16 +168,22 @@ class _PanelScreenState extends State<PanelScreen> {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.label, required this.value});
+class _StatTile extends StatelessWidget {
+  const _StatTile({required this.label, required this.value});
 
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text('$label: $value'),
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: Text(label),
+      trailing: Text(
+        value,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
     );
   }
 }
