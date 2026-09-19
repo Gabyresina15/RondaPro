@@ -19,18 +19,29 @@ class DashboardStats {
   final int findingsHigh;
   final DateTime? lastCompletedAt;
 
+  static int _toInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    return int.tryParse('$value') ?? 0;
+  }
+
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
+    final last = json['lastCompletedAt'];
     return DashboardStats(
-      sitesCount: json['sitesCount'] as int? ?? 0,
-      templatesCount: json['templatesCount'] as int? ?? 0,
-      rondasInProgress: json['rondasInProgress'] as int? ?? 0,
-      rondasCompleted: json['rondasCompleted'] as int? ?? 0,
-      photosTotal: json['photosTotal'] as int? ?? 0,
-      findingsOpen: json['findingsOpen'] as int? ?? 0,
-      findingsHigh: json['findingsHigh'] as int? ?? 0,
-      lastCompletedAt: json['lastCompletedAt'] == null
-          ? null
-          : DateTime.parse(json['lastCompletedAt'] as String),
+      sitesCount: _toInt(json['sitesCount']),
+      templatesCount: _toInt(json['templatesCount']),
+      rondasInProgress: _toInt(json['rondasInProgress']),
+      rondasCompleted: _toInt(json['rondasCompleted']),
+      photosTotal: _toInt(json['photosTotal']),
+      findingsOpen: _toInt(json['findingsOpen']),
+      findingsHigh: _toInt(json['findingsHigh']),
+      lastCompletedAt: last is String && last.isNotEmpty
+          ? DateTime.tryParse(last)
+          : null,
     );
   }
 }

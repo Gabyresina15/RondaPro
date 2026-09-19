@@ -46,7 +46,12 @@ class _HomeShellState extends State<HomeShell> {
         onDestinationSelected: (value) {
           setState(() => _index = value);
           if (value == 2) {
-            context.read<DashboardController>().load();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) {
+                return;
+              }
+              context.read<DashboardController>().load();
+            });
           }
         },
         destinations: const [

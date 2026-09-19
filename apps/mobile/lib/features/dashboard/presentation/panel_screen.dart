@@ -99,7 +99,10 @@ class _PanelScreenState extends State<PanelScreen> {
           Text('Dashboard', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           if (dashboard.loading && stats == null)
-            const Center(child: CircularProgressIndicator())
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
           else if (dashboard.error != null && stats == null)
             Text(dashboard.error!)
           else if (stats != null)
