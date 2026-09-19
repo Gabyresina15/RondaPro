@@ -33,41 +33,53 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     final auth = context.watch<AuthController>();
     final templates = context.watch<TemplatesController>();
 
-    final body = Scaffold(
-      appBar: widget.embedded
-          ? null
-          : AppBar(
-              title: const Text('Checklist templates'),
-              actions: [
-                IconButton(
-                  tooltip: 'Refresh',
-                  onPressed: templates.loading ? null : () => templates.load(),
-                  icon: const Icon(Icons.refresh),
-                ),
-                IconButton(
-                  tooltip: 'Sign out',
-                  onPressed: () => auth.logout(),
-                  icon: const Icon(Icons.logout),
-                ),
-              ],
-            ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (_) => const CreateTemplateScreen(),
-            ),
-          );
-          if (created == true && mounted) {
-            await context.read<TemplatesController>().load();
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('New template'),
+    final fab = FloatingActionButton.extended(
+      onPressed: () async {
+        final created = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => const CreateTemplateScreen(),
+          ),
+        );
+        if (created == true && mounted) {
+          await context.read<TemplatesController>().load();
+        }
+      },
+      icon: const Icon(Icons.add),
+      label: const Text('New template'),
+    );
+
+    if (widget.embedded) {
+      return Stack(
+        children: [
+          _buildBody(templates, auth),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: fab,
+          ),
+        ],
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Checklist templates'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: templates.loading ? null : () => templates.load(),
+            icon: const Icon(Icons.refresh),
+          ),
+          IconButton(
+            tooltip: 'Sign out',
+            onPressed: () => auth.logout(),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
+      floatingActionButton: fab,
       body: _buildBody(templates, auth),
     );
-    return body;
   }
 
   Future<void> _startRonda(BuildContext context, String templateId) async {
