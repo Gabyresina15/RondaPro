@@ -73,16 +73,53 @@ class RondaPhoto {
   }
 }
 
+class RondaFinding {
+  const RondaFinding({
+    required this.id,
+    required this.title,
+    required this.notes,
+    required this.severity,
+    required this.status,
+    this.itemIndex,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String title;
+  final String notes;
+  final String severity;
+  final String status;
+  final int? itemIndex;
+  final DateTime createdAt;
+
+  bool get isOpen => status == 'open';
+
+  factory RondaFinding.fromJson(Map<String, dynamic> json) {
+    return RondaFinding(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      notes: (json['notes'] as String?) ?? '',
+      severity: json['severity'] as String,
+      status: json['status'] as String,
+      itemIndex: json['itemIndex'] as int?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+}
+
 class Ronda {
   const Ronda({
     required this.id,
     required this.templateId,
     required this.templateName,
     required this.ownerId,
+    this.siteId,
+    this.siteName,
     required this.location,
     required this.status,
     required this.answers,
     required this.photos,
+    this.findings = const [],
     this.summary,
     this.summarySource,
     this.completedAt,
@@ -94,10 +131,13 @@ class Ronda {
   final String templateId;
   final String templateName;
   final String ownerId;
+  final String? siteId;
+  final String? siteName;
   final String location;
   final String status;
   final List<RondaAnswer> answers;
   final List<RondaPhoto> photos;
+  final List<RondaFinding> findings;
   final String? summary;
   final String? summarySource;
   final DateTime? completedAt;
@@ -112,6 +152,8 @@ class Ronda {
       templateId: json['templateId'] as String,
       templateName: json['templateName'] as String,
       ownerId: json['ownerId'] as String,
+      siteId: json['siteId'] as String?,
+      siteName: json['siteName'] as String?,
       location: (json['location'] as String?) ?? '',
       status: json['status'] as String,
       answers: (json['answers'] as List<dynamic>? ?? const [])
@@ -119,6 +161,9 @@ class Ronda {
           .toList(),
       photos: (json['photos'] as List<dynamic>? ?? const [])
           .map((e) => RondaPhoto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      findings: (json['findings'] as List<dynamic>? ?? const [])
+          .map((e) => RondaFinding.fromJson(e as Map<String, dynamic>))
           .toList(),
       summary: json['summary'] as String?,
       summarySource: json['summarySource'] as String?,
