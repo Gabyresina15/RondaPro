@@ -1,9 +1,11 @@
-import type { Ronda, RondaAnswer, RondaPhoto } from '../entities/Ronda.js';
+import type { Finding, Ronda, RondaAnswer, RondaPhoto } from '../entities/Ronda.js';
 
 export interface CreateRondaInput {
   templateId: string;
   templateName: string;
   ownerId: string;
+  siteId?: string;
+  siteName?: string;
   location: string;
   answers: RondaAnswer[];
 }
@@ -12,6 +14,7 @@ export interface CompleteRondaInput {
   summary: string;
   summarySource: 'llm' | 'heuristic';
   completedAt: Date;
+  findings?: Finding[];
 }
 
 export interface RondaRepository {
@@ -27,6 +30,16 @@ export interface RondaRepository {
     id: string,
     ownerId: string,
     photos: RondaPhoto[],
+  ): Promise<Ronda | null>;
+  addFinding(
+    id: string,
+    ownerId: string,
+    finding: Finding,
+  ): Promise<Ronda | null>;
+  resolveFinding(
+    id: string,
+    ownerId: string,
+    findingId: string,
   ): Promise<Ronda | null>;
   complete(
     id: string,

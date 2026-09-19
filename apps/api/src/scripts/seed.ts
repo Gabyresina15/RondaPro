@@ -2,6 +2,7 @@ import { loadConfig } from '../config.js';
 import { connectMongo, disconnectMongo } from '../adapters/persistence/mongoConnection.js';
 import { MongoUserRepository } from '../adapters/persistence/MongoUserRepository.js';
 import { MongoChecklistTemplateRepository } from '../adapters/persistence/MongoChecklistTemplateRepository.js';
+import { MongoSiteRepository } from '../adapters/persistence/MongoSiteRepository.js';
 import { BcryptPasswordHasher } from '../adapters/security/BcryptPasswordHasher.js';
 
 const DEMO_EMAIL = 'demo@rondapro.local';
@@ -14,6 +15,7 @@ async function seed(): Promise<void> {
 
   const users = new MongoUserRepository();
   const templates = new MongoChecklistTemplateRepository();
+  const sites = new MongoSiteRepository();
   const hasher = new BcryptPasswordHasher();
 
   let user = await users.findByEmail(DEMO_EMAIL);
@@ -44,9 +46,22 @@ async function seed(): Promise<void> {
         { label: 'Emergency exits unobstructed', required: true, type: 'bool' },
       ],
     });
-    console.log(`Created template: ${template.name} (${template.id})`);
+    console.log(`Created template: ${template.name} (${template.id}`);
   } else {
     console.log('Retail floor checklist template already exists');
+  }
+
+  const existingSites = await sites.findByOwner(user.id);
+  if (!existingSites.some((s) => s.name === 'Store 12 — Palermo')) {
+    const site = await sites.create({
+      ownerId: user.id,
+      name: 'Store 12 — Palermo',
+      address: 'Av. Santa Fe 3200, CABA',
+      notes: 'Flagship retail floor. Close walkthrough after 21:00.',
+    });
+    console.log(`Created site: ${site.name} (${site.id}`);
+  } else {
+    console.log('Demo site already exists');
   }
 
   console.log('');

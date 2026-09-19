@@ -12,15 +12,22 @@ export class HeuristicSummaryGenerator implements SummaryGenerator {
       .filter((a) => a.type === 'text' && (a.textValue ?? '').trim().length > 0)
       .map((a) => `- ${a.label}: ${a.textValue?.trim()}`)
       .join('\n');
-    const location = ronda.location.trim() || 'unspecified location';
+    const place =
+      ronda.siteName?.trim() ||
+      ronda.location.trim() ||
+      'unspecified location';
+    const openFindings = ronda.findings.filter((f) => f.status === 'open');
 
     const text = [
-      `Ronda completed for "${ronda.templateName}" at ${location}.`,
+      `Ronda completed for "${ronda.templateName}" at ${place}.`,
       `Evidence: ${ronda.photos.length} photo(s) attached.`,
       `Checklist results: ${yes} passed, ${no} failed, ${ronda.answers.length} items recorded.`,
+      openFindings.length
+        ? `Open findings: ${openFindings.length} (${openFindings.map((f) => f.title).join('; ')}).`
+        : 'No open findings.',
       notes ? `Notes:\n${notes}` : 'No free-text notes were recorded.',
-      no > 0
-        ? 'Follow-up recommended for failed boolean checks.'
+      no > 0 || openFindings.length > 0
+        ? 'Follow-up recommended.'
         : 'No failed boolean checks were recorded.',
     ].join(' ');
 

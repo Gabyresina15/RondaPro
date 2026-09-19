@@ -3,6 +3,19 @@ import { z } from 'zod';
 export const startRondaBodySchema = z.object({
   templateId: z.string().min(1),
   location: z.string().max(200).default(''),
+  siteId: z.string().min(1).optional(),
+});
+
+export const addFindingBodySchema = z.object({
+  title: z.string().min(1).max(200),
+  notes: z.string().max(2000).default(''),
+  severity: z.enum(['low', 'medium', 'high']).default('medium'),
+  itemIndex: z.number().int().min(0).optional(),
+});
+
+export const findingParamsSchema = z.object({
+  id: z.string().min(1),
+  findingId: z.string().min(1),
 });
 
 export const rondaIdParamsSchema = z.object({
