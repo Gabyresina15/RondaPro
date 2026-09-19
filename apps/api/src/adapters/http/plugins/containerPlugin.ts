@@ -6,6 +6,7 @@ import type { GetDashboard } from '../../../application/dashboard/GetDashboard.j
 import type { AddFinding } from '../../../application/rondas/AddFinding.js';
 import type { AddRondaPhotos } from '../../../application/rondas/AddRondaPhotos.js';
 import type { CompleteRonda } from '../../../application/rondas/CompleteRonda.js';
+import type { ExportRondaPdf } from '../../../application/rondas/ExportRondaPdf.js';
 import type { GetRonda } from '../../../application/rondas/GetRonda.js';
 import type { GetRondaPhoto } from '../../../application/rondas/GetRondaPhoto.js';
 import type { ListRondas } from '../../../application/rondas/ListRondas.js';
@@ -35,6 +36,7 @@ export interface AppContainer {
   startRonda: StartRonda;
   listRondas: ListRondas;
   getRonda: GetRonda;
+  exportRondaPdf: ExportRondaPdf;
   saveRondaAnswers: SaveRondaAnswers;
   addRondaPhotos: AddRondaPhotos;
   completeRonda: CompleteRonda;
