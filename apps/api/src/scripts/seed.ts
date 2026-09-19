@@ -46,7 +46,7 @@ async function seed(): Promise<void> {
         { label: 'Emergency exits unobstructed', required: true, type: 'bool' },
       ],
     });
-    console.log(`Created template: ${template.name} (${template.id}`);
+    console.log(`Created template: ${template.name} (${template.id})`);
   } else {
     console.log('Retail floor checklist template already exists');
   }
@@ -59,7 +59,7 @@ async function seed(): Promise<void> {
       address: 'Av. Santa Fe 3200, CABA',
       notes: 'Flagship retail floor. Close walkthrough after 21:00.',
     });
-    console.log(`Created site: ${site.name} (${site.id}`);
+    console.log(`Created site: ${site.name} (${site.id})`);
   } else {
     console.log('Demo site already exists');
   }
