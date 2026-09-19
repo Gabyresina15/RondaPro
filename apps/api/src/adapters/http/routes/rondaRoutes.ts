@@ -148,6 +148,28 @@ export const rondaRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
+  app.get('/rondas/:id/export.pdf', async (request, reply) => {
+    if (!request.authUser) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const params = rondaIdParamsSchema.safeParse(request.params);
+    if (!params.success) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'Invalid ronda id' });
+    }
+    try {
+      const pdf = await app.container.exportRondaPdf.execute(
+        params.data.id,
+        request.authUser.id,
+      );
+      return reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${pdf.filename}"`)
+        .send(pdf.bytes);
+    } catch (err) {
+      return sendDomainError(reply, err);
+    }
+  });
+
   app.patch('/rondas/:id/answers', async (request, reply) => {
     if (!request.authUser) {
       return reply.code(401).send({ error: 'Unauthorized' });
