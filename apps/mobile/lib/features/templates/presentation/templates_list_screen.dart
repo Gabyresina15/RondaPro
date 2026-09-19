@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../rondas/presentation/perform_ronda_screen.dart';
 import '../../rondas/presentation/rondas_controller.dart';
+import '../../sites/domain/site.dart';
+import '../../sites/presentation/sites_controller.dart';
 import 'create_template_screen.dart';
 import 'templates_controller.dart';
 
@@ -22,6 +24,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TemplatesController>().load();
+      context.read<SitesController>().load();
     });
   }
 
@@ -68,38 +71,65 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
   }
 
   Future<void> _startRonda(BuildContext context, String templateId) async {
+    final sites = context.read<SitesController>().items;
     final locationController = TextEditingController();
-    final location = await showDialog<String>(
+    Site? selected = sites.isEmpty ? null : sites.first;
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Start ronda'),
-          content: TextField(
-            controller: locationController,
-            decoration: const InputDecoration(
-              labelText: 'Location (optional)',
-              hintText: 'Store 12 — Palermo',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, locationController.text),
-              child: const Text('Start'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setLocal) {
+            return AlertDialog(
+              title: const Text('Start ronda'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (sites.isNotEmpty)
+                    DropdownButtonFormField<Site>(
+                      value: selected,
+                      items: sites
+                          .map(
+                            (site) => DropdownMenuItem(
+                              value: site,
+                              child: Text(site.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) => setLocal(() => selected = value),
+                      decoration: const InputDecoration(labelText: 'Site'),
+                    ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Extra location note',
+                      hintText: 'Aisle 4 / back office',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Start'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-    if (location == null || !context.mounted) {
+    if (confirmed != true || !context.mounted) {
       return;
     }
     final ronda = await context.read<RondasController>().start(
           templateId: templateId,
-          location: location.trim(),
+          location: locationController.text.trim(),
+          siteId: selected?.id,
         );
     if (!context.mounted) {
       return;
