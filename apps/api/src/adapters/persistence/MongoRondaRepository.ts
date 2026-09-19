@@ -1,4 +1,9 @@
-import type { Ronda, RondaAnswer, RondaPhoto } from '../../domain/entities/Ronda.js';
+import type {
+  Finding,
+  Ronda,
+  RondaAnswer,
+  RondaPhoto,
+} from '../../domain/entities/Ronda.js';
 import type {
   CompleteRondaInput,
   CreateRondaInput,
@@ -12,6 +17,8 @@ function toDomain(doc: RondaDocument): Ronda {
     templateId: String(doc.templateId),
     templateName: doc.templateName,
     ownerId: String(doc.ownerId),
+    siteId: doc.siteId ? String(doc.siteId) : undefined,
+    siteName: doc.siteName ?? undefined,
     location: doc.location,
     status: doc.status as Ronda['status'],
     answers: doc.answers.map((a) => ({
@@ -29,6 +36,15 @@ function toDomain(doc: RondaDocument): Ronda {
       itemIndex: p.itemIndex ?? undefined,
       createdAt: p.createdAt,
     })),
+    findings: (doc.findings ?? []).map((f) => ({
+      id: f.id,
+      title: f.title,
+      notes: f.notes,
+      severity: f.severity as Finding['severity'],
+      status: f.status as Finding['status'],
+      itemIndex: f.itemIndex ?? undefined,
+      createdAt: f.createdAt,
+    })),
     summary: doc.summary ?? undefined,
     summarySource: (doc.summarySource as Ronda['summarySource']) ?? undefined,
     completedAt: doc.completedAt ?? undefined,
@@ -43,10 +59,13 @@ export class MongoRondaRepository implements RondaRepository {
       templateId: input.templateId,
       templateName: input.templateName,
       ownerId: input.ownerId,
+      siteId: input.siteId,
+      siteName: input.siteName,
       location: input.location,
       status: 'in_progress',
       answers: input.answers,
       photos: [],
+      findings: [],
     });
     return toDomain(doc as RondaDocument);
   }
@@ -89,21 +108,49 @@ export class MongoRondaRepository implements RondaRepository {
     return doc ? toDomain(doc as RondaDocument) : null;
   }
 
+  async addFinding(
+    id: string,
+    ownerId: string,
+    finding: Finding,
+  ): Promise<Ronda | null> {
+    const doc = await RondaModel.findOneAndUpdate(
+      { _id: id, ownerId, status: 'in_progress' },
+      { $push: { findings: finding } },
+      { new: true },
+    ).exec();
+    return doc ? toDomain(doc as RondaDocument) : null;
+  }
+
+  async resolveFinding(
+    id: string,
+    ownerId: string,
+    findingId: string,
+  ): Promise<Ronda | null> {
+    const doc = await RondaModel.findOneAndUpdate(
+      { _id: id, ownerId, 'findings.id': findingId },
+      { $set: { 'findings.$.status': 'resolved' } },
+      { new: true },
+    ).exec();
+    return doc ? toDomain(doc as RondaDocument) : null;
+  }
+
   async complete(
     id: string,
     ownerId: string,
     input: CompleteRondaInput,
   ): Promise<Ronda | null> {
+    const set: Record<string, unknown> = {
+      status: 'completed',
+      summary: input.summary,
+      summarySource: input.summarySource,
+      completedAt: input.completedAt,
+    };
+    if (input.findings) {
+      set.findings = input.findings;
+    }
     const doc = await RondaModel.findOneAndUpdate(
       { _id: id, ownerId, status: 'in_progress' },
-      {
-        $set: {
-          status: 'completed',
-          summary: input.summary,
-          summarySource: input.summarySource,
-          completedAt: input.completedAt,
-        },
-      },
+      { $set: set },
       { new: true },
     ).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
