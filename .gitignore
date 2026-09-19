@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.dart_tool/
+.packages
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+.env
+*.log
+.DS_Store
+.idea/
+*.iml
+coverage/
+*.zip
