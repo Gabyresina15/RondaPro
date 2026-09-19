@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../data/ronda_repository.dart';
 import '../domain/ronda.dart';
@@ -82,11 +85,38 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
     }
   }
 
+  Future<void> _exportPdf() async {
+    try {
+      final bytes = await context.read<RondaRepository>().exportPdf(_ronda.id);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/rondapro-${_ronda.id}.pdf');
+      await file.writeAsBytes(bytes, flush: true);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/pdf')],
+        text: _ronda.templateName,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not export PDF: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ronda = _ronda;
     return Scaffold(
-      appBar: AppBar(title: Text(ronda.templateName)),
+      appBar: AppBar(
+        title: Text(ronda.templateName),
+        actions: [
+          IconButton(
+            tooltip: 'Export PDF',
+            onPressed: _exportPdf,
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
