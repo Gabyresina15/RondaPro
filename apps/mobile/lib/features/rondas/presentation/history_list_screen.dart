@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../data/ronda_repository.dart';
 import '../../sites/presentation/sites_controller.dart';
 import 'perform_ronda_screen.dart';
 import 'ronda_detail_screen.dart';
@@ -41,6 +46,24 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
       }
       return true;
     }).toList();
+  }
+
+  Future<void> _export(BuildContext context, Ronda item) async {
+    try {
+      final bytes = await context.read<RondaRepository>().exportPdf(item.id);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/rondapro-${item.id}.pdf');
+      await file.writeAsBytes(bytes, flush: true);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/pdf')],
+        text: item.templateName,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not export PDF: $e')),
+      );
+    }
   }
 
   @override
@@ -153,6 +176,13 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                   '${item.findings.where((f) => f.isOpen).length} open findings',
                 ].join(' · '),
               ),
+              trailing: item.isCompleted
+                  ? IconButton(
+                      tooltip: 'Export PDF',
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      onPressed: () => _export(context, item),
+                    )
+                  : null,
               onTap: () {
                 if (item.isCompleted) {
                   Navigator.of(context).push(
