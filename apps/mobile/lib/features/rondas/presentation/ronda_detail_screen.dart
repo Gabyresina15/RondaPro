@@ -5,14 +5,86 @@ import 'package:provider/provider.dart';
 
 import '../data/ronda_repository.dart';
 import '../domain/ronda.dart';
+import 'rondas_controller.dart';
 
-class RondaDetailScreen extends StatelessWidget {
+class RondaDetailScreen extends StatefulWidget {
   const RondaDetailScreen({super.key, required this.ronda});
 
   final Ronda ronda;
 
   @override
+  State<RondaDetailScreen> createState() => _RondaDetailScreenState();
+}
+
+class _RondaDetailScreenState extends State<RondaDetailScreen> {
+  late Ronda _ronda;
+
+  @override
+  void initState() {
+    super.initState();
+    _ronda = widget.ronda;
+  }
+
+  Future<void> _editFinding(RondaFinding finding) async {
+    final assignee = TextEditingController(text: finding.assignee ?? '');
+    final note = TextEditingController(text: finding.resolutionNote ?? '');
+    final close = finding.isOpen;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(close ? 'Close finding' : 'Reopen finding'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(finding.title),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: assignee,
+                  decoration: const InputDecoration(labelText: 'Assignee'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: note,
+                  decoration: const InputDecoration(labelText: 'Resolution note'),
+                  minLines: 2,
+                  maxLines: 4,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(close ? 'Close' : 'Reopen'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    final updated = await context.read<RondasController>().updateFinding(
+          rondaId: _ronda.id,
+          findingId: finding.id,
+          status: close ? 'closed' : 'open',
+          assignee: assignee.text.trim(),
+          resolutionNote: note.text.trim(),
+        );
+    if (updated != null && mounted) {
+      setState(() => _ronda = updated);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final ronda = _ronda;
     return Scaffold(
       appBar: AppBar(title: Text(ronda.templateName)),
       body: ListView(
@@ -49,7 +121,7 @@ class RondaDetailScreen extends StatelessWidget {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(ronda.summary!),
+                child: Text(ronda.summary ?? ''),
               ),
             ),
             const SizedBox(height: 16),
@@ -57,10 +129,24 @@ class RondaDetailScreen extends StatelessWidget {
           if (ronda.findings.isNotEmpty) ...[
             Text('Findings', style: Theme.of(context).textTheme.titleMedium),
             ...ronda.findings.map(
-              (f) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(f.title),
-                subtitle: Text('${f.severity} · ${f.status}\n${f.notes}'),
+              (f) => Card(
+                child: ListTile(
+                  title: Text(f.title),
+                  subtitle: Text(
+                    [
+                      '${f.severity} · ${f.isOpen ? 'open' : 'closed'}',
+                      if ((f.assignee ?? '').isNotEmpty) 'Assignee: ${f.assignee}',
+                      if (f.notes.isNotEmpty) f.notes,
+                      if ((f.resolutionNote ?? '').isNotEmpty)
+                        'Resolution: ${f.resolutionNote}',
+                    ].join('\n'),
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => _editFinding(f),
+                    child: Text(f.isOpen ? 'Close' : 'Reopen'),
+                  ),
+                  onTap: () => _editFinding(f),
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -133,7 +219,7 @@ class _RemotePhoto extends StatelessWidget {
           );
         }
         return Image.memory(
-          Uint8List.fromList(snapshot.data!),
+          Uint8List.fromList(snapshot.data ?? const []),
           width: 96,
           height: 96,
           fit: BoxFit.cover,
