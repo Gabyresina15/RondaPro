@@ -81,6 +81,9 @@ class RondaFinding {
     required this.severity,
     required this.status,
     this.itemIndex,
+    this.assignee,
+    this.resolutionNote,
+    this.resolvedAt,
     required this.createdAt,
   });
 
@@ -90,18 +93,27 @@ class RondaFinding {
   final String severity;
   final String status;
   final int? itemIndex;
+  final String? assignee;
+  final String? resolutionNote;
+  final DateTime? resolvedAt;
   final DateTime createdAt;
 
   bool get isOpen => status == 'open';
 
   factory RondaFinding.fromJson(Map<String, dynamic> json) {
+    final resolvedAt = json['resolvedAt'];
     return RondaFinding(
       id: json['id'] as String,
       title: json['title'] as String,
       notes: (json['notes'] as String?) ?? '',
-      severity: json['severity'] as String,
-      status: json['status'] as String,
-      itemIndex: json['itemIndex'] as int?,
+      severity: json['severity'] as String? ?? 'medium',
+      status: json['status'] as String? ?? 'open',
+      itemIndex: json['itemIndex'] is int ? json['itemIndex'] as int : null,
+      assignee: json['assignee'] as String?,
+      resolutionNote: json['resolutionNote'] as String?,
+      resolvedAt: resolvedAt is String && resolvedAt.isNotEmpty
+          ? DateTime.tryParse(resolvedAt)
+          : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
