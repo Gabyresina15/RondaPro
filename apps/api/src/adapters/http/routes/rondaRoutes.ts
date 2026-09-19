@@ -16,6 +16,7 @@ import {
   rondaPhotoParamsSchema,
   saveAnswersBodySchema,
   startRondaBodySchema,
+  updateFindingBodySchema,
 } from '../schemas/rondaSchemas.js';
 
 function serializeRonda(ronda: Ronda) {
@@ -44,6 +45,10 @@ function serializeRonda(ronda: Ronda) {
       severity: finding.severity,
       status: finding.status,
       itemIndex: finding.itemIndex ?? null,
+      assignee: finding.assignee ?? null,
+      resolutionNote: finding.resolutionNote ?? null,
+      resolvedAt: finding.resolvedAt?.toISOString() ?? null,
+      resolvedBy: finding.resolvedBy ?? null,
       createdAt: finding.createdAt.toISOString(),
     })),
     summary: ronda.summary ?? null,
@@ -82,7 +87,21 @@ export const rondaRoutes: FastifyPluginAsync = async (app) => {
     if (!request.authUser) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
-    const items = await app.container.listRondas.execute(request.authUser.id);
+    const query = (request.query ?? {}) as {
+      siteId?: string;
+      status?: string;
+      openFindings?: string;
+    };
+    let items = await app.container.listRondas.execute(request.authUser.id);
+    if (query.siteId) {
+      items = items.filter((r) => r.siteId === query.siteId);
+    }
+    if (query.status === 'in_progress' || query.status === 'completed') {
+      items = items.filter((r) => r.status === query.status);
+    }
+    if (query.openFindings === 'true') {
+      items = items.filter((r) => r.findings.some((f) => f.status === 'open'));
+    }
     return reply.send({ items: items.map(serializeRonda) });
   });
 
@@ -222,6 +241,33 @@ export const rondaRoutes: FastifyPluginAsync = async (app) => {
         itemIndex: body.data.itemIndex,
       });
       return reply.code(201).send(serializeRonda(ronda));
+    } catch (err) {
+      return sendDomainError(reply, err);
+    }
+  });
+
+  app.patch('/rondas/:id/findings/:findingId', async (request, reply) => {
+    if (!request.authUser) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const params = findingParamsSchema.safeParse(request.params);
+    const body = updateFindingBodySchema.safeParse(request.body ?? {});
+    if (!params.success || !body.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        message: 'Invalid finding update',
+      });
+    }
+    try {
+      const ronda = await app.container.updateFinding.execute({
+        rondaId: params.data.id,
+        ownerId: request.authUser.id,
+        findingId: params.data.findingId,
+        status: body.data.status,
+        assignee: body.data.assignee,
+        resolutionNote: body.data.resolutionNote,
+      });
+      return reply.send(serializeRonda(ronda));
     } catch (err) {
       return sendDomainError(reply, err);
     }
