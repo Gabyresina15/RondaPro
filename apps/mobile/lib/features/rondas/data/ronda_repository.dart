@@ -113,4 +113,8 @@ class RondaRepository {
   Future<List<int>> photoBytes(String rondaId, String photoId) {
     return _api.getBytes('/rondas/$rondaId/photos/$photoId', auth: true);
   }
+
+  Future<List<int>> exportPdf(String id) {
+    return _api.getBytes('/rondas/$id/export.pdf', auth: true);
+  }
 }
