@@ -5,9 +5,13 @@ import { InvalidPhotoError } from '../../../application/rondas/AddRondaPhotos.js
 import { RondaCompletionError } from '../../../application/rondas/CompleteRonda.js';
 import { PhotoNotFoundError } from '../../../application/rondas/GetRondaPhoto.js';
 import { RondaNotFoundError } from '../../../application/rondas/GetRonda.js';
+import { FindingNotFoundError } from '../../../application/rondas/ResolveFinding.js';
 import { RondaAlreadyCompletedError } from '../../../application/rondas/SaveRondaAnswers.js';
+import { SiteNotFoundError } from '../../../application/sites/GetSite.js';
 import {
+  addFindingBodySchema,
   addPhotosBodySchema,
+  findingParamsSchema,
   rondaIdParamsSchema,
   rondaPhotoParamsSchema,
   saveAnswersBodySchema,
@@ -20,6 +24,8 @@ function serializeRonda(ronda: Ronda) {
     templateId: ronda.templateId,
     templateName: ronda.templateName,
     ownerId: ronda.ownerId,
+    siteId: ronda.siteId ?? null,
+    siteName: ronda.siteName ?? null,
     location: ronda.location,
     status: ronda.status,
     answers: ronda.answers,
@@ -30,6 +36,15 @@ function serializeRonda(ronda: Ronda) {
       itemIndex: photo.itemIndex ?? null,
       url: `/rondas/${ronda.id}/photos/${photo.id}`,
       createdAt: photo.createdAt.toISOString(),
+    })),
+    findings: ronda.findings.map((finding) => ({
+      id: finding.id,
+      title: finding.title,
+      notes: finding.notes,
+      severity: finding.severity,
+      status: finding.status,
+      itemIndex: finding.itemIndex ?? null,
+      createdAt: finding.createdAt.toISOString(),
     })),
     summary: ronda.summary ?? null,
     summarySource: ronda.summarySource ?? null,
@@ -42,7 +57,13 @@ function serializeRonda(ronda: Ronda) {
 function sendDomainError(reply: {
   code: (status: number) => { send: (payload: unknown) => unknown };
 }, err: unknown) {
-  if (err instanceof TemplateNotFoundError || err instanceof RondaNotFoundError || err instanceof PhotoNotFoundError) {
+  if (
+    err instanceof TemplateNotFoundError ||
+    err instanceof RondaNotFoundError ||
+    err instanceof PhotoNotFoundError ||
+    err instanceof SiteNotFoundError ||
+    err instanceof FindingNotFoundError
+  ) {
     return reply.code(404).send({ error: 'NotFound', message: err.message });
   }
   if (err instanceof RondaAlreadyCompletedError) {
@@ -81,6 +102,7 @@ export const rondaRoutes: FastifyPluginAsync = async (app) => {
         templateId: parsed.data.templateId,
         ownerId: request.authUser.id,
         location: parsed.data.location,
+        siteId: parsed.data.siteId,
       });
       return reply.code(201).send(serializeRonda(ronda));
     } catch (err) {
@@ -173,6 +195,53 @@ export const rondaRoutes: FastifyPluginAsync = async (app) => {
         .header('Content-Type', photo.mimeType)
         .header('Content-Disposition', `inline; filename="${photo.filename}"`)
         .send(photo.bytes);
+    } catch (err) {
+      return sendDomainError(reply, err);
+    }
+  });
+
+  app.post('/rondas/:id/findings', async (request, reply) => {
+    if (!request.authUser) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const params = rondaIdParamsSchema.safeParse(request.params);
+    const body = addFindingBodySchema.safeParse(request.body);
+    if (!params.success || !body.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        message: 'Invalid finding payload',
+      });
+    }
+    try {
+      const ronda = await app.container.addFinding.execute({
+        rondaId: params.data.id,
+        ownerId: request.authUser.id,
+        title: body.data.title,
+        notes: body.data.notes,
+        severity: body.data.severity,
+        itemIndex: body.data.itemIndex,
+      });
+      return reply.code(201).send(serializeRonda(ronda));
+    } catch (err) {
+      return sendDomainError(reply, err);
+    }
+  });
+
+  app.post('/rondas/:id/findings/:findingId/resolve', async (request, reply) => {
+    if (!request.authUser) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const params = findingParamsSchema.safeParse(request.params);
+    if (!params.success) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'Invalid finding id' });
+    }
+    try {
+      const ronda = await app.container.resolveFinding.execute(
+        params.data.id,
+        request.authUser.id,
+        params.data.findingId,
+      );
+      return reply.send(serializeRonda(ronda));
     } catch (err) {
       return sendDomainError(reply, err);
     }
