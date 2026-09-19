@@ -2,13 +2,21 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { LoginUser } from './application/auth/LoginUser.js';
 import { RegisterUser } from './application/auth/RegisterUser.js';
+import { GetDashboard } from './application/dashboard/GetDashboard.js';
+import { AddFinding } from './application/rondas/AddFinding.js';
 import { AddRondaPhotos } from './application/rondas/AddRondaPhotos.js';
 import { CompleteRonda } from './application/rondas/CompleteRonda.js';
 import { GetRonda } from './application/rondas/GetRonda.js';
 import { GetRondaPhoto } from './application/rondas/GetRondaPhoto.js';
 import { ListRondas } from './application/rondas/ListRondas.js';
+import { ResolveFinding } from './application/rondas/ResolveFinding.js';
 import { SaveRondaAnswers } from './application/rondas/SaveRondaAnswers.js';
 import { StartRonda } from './application/rondas/StartRonda.js';
+import { CreateSite } from './application/sites/CreateSite.js';
+import { DeleteSite } from './application/sites/DeleteSite.js';
+import { GetSite } from './application/sites/GetSite.js';
+import { ListSites } from './application/sites/ListSites.js';
+import { UpdateSite } from './application/sites/UpdateSite.js';
 import { CreateTemplate } from './application/templates/CreateTemplate.js';
 import { DeleteTemplate } from './application/templates/DeleteTemplate.js';
 import { GetTemplate } from './application/templates/GetTemplate.js';
@@ -16,6 +24,7 @@ import { ListTemplates } from './application/templates/ListTemplates.js';
 import { UpdateTemplate } from './application/templates/UpdateTemplate.js';
 import { MongoChecklistTemplateRepository } from './adapters/persistence/MongoChecklistTemplateRepository.js';
 import { MongoRondaRepository } from './adapters/persistence/MongoRondaRepository.js';
+import { MongoSiteRepository } from './adapters/persistence/MongoSiteRepository.js';
 import { MongoUserRepository } from './adapters/persistence/MongoUserRepository.js';
 import { BcryptPasswordHasher } from './adapters/security/BcryptPasswordHasher.js';
 import { JwtTokenService } from './adapters/security/JwtTokenService.js';
@@ -28,8 +37,10 @@ import {
 import { authPlugin } from './adapters/http/plugins/authPlugin.js';
 import { containerPlugin } from './adapters/http/plugins/containerPlugin.js';
 import { authRoutes } from './adapters/http/routes/authRoutes.js';
+import { dashboardRoutes } from './adapters/http/routes/dashboardRoutes.js';
 import { healthRoutes } from './adapters/http/routes/healthRoutes.js';
 import { rondaRoutes } from './adapters/http/routes/rondaRoutes.js';
+import { siteRoutes } from './adapters/http/routes/siteRoutes.js';
 import { templateRoutes } from './adapters/http/routes/templateRoutes.js';
 import type { AppConfig } from './config.js';
 import type { SummaryGenerator } from './domain/ports/SummaryGenerator.js';
@@ -58,6 +69,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   const users = new MongoUserRepository();
   const templates = new MongoChecklistTemplateRepository();
   const rondas = new MongoRondaRepository();
+  const sites = new MongoSiteRepository();
   const photos = new LocalPhotoStorage(config.UPLOAD_DIR);
   const hasher = new BcryptPasswordHasher();
   const tokens = new JwtTokenService(config.JWT_SECRET, config.JWT_EXPIRES_IN);
@@ -71,13 +83,21 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     getTemplate: new GetTemplate(templates),
     updateTemplate: new UpdateTemplate(templates),
     deleteTemplate: new DeleteTemplate(templates),
-    startRonda: new StartRonda(rondas, templates),
+    startRonda: new StartRonda(rondas, templates, sites),
     listRondas: new ListRondas(rondas),
     getRonda: new GetRonda(rondas),
     saveRondaAnswers: new SaveRondaAnswers(rondas),
     addRondaPhotos: new AddRondaPhotos(rondas, photos),
     completeRonda: new CompleteRonda(rondas, templates, summaries),
     getRondaPhoto: new GetRondaPhoto(rondas, photos),
+    addFinding: new AddFinding(rondas),
+    resolveFinding: new ResolveFinding(rondas),
+    createSite: new CreateSite(sites),
+    listSites: new ListSites(sites),
+    getSite: new GetSite(sites),
+    updateSite: new UpdateSite(sites),
+    deleteSite: new DeleteSite(sites),
+    getDashboard: new GetDashboard(rondas, templates, sites),
   };
 
   await app.register(cors, {
@@ -89,6 +109,8 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(authRoutes);
   await app.register(templateRoutes);
   await app.register(rondaRoutes);
+  await app.register(siteRoutes);
+  await app.register(dashboardRoutes);
 
   return app;
 }

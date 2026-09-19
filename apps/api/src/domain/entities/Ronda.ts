@@ -1,4 +1,6 @@
 export type RondaStatus = 'in_progress' | 'completed';
+export type FindingSeverity = 'low' | 'medium' | 'high';
+export type FindingStatus = 'open' | 'resolved';
 
 export interface RondaAnswer {
   itemIndex: number;
@@ -17,15 +19,28 @@ export interface RondaPhoto {
   createdAt: Date;
 }
 
+export interface Finding {
+  id: string;
+  title: string;
+  notes: string;
+  severity: FindingSeverity;
+  status: FindingStatus;
+  itemIndex?: number;
+  createdAt: Date;
+}
+
 export interface Ronda {
   id: string;
   templateId: string;
   templateName: string;
   ownerId: string;
+  siteId?: string;
+  siteName?: string;
   location: string;
   status: RondaStatus;
   answers: RondaAnswer[];
   photos: RondaPhoto[];
+  findings: Finding[];
   summary?: string;
   summarySource?: 'llm' | 'heuristic';
   completedAt?: Date;
