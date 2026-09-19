@@ -23,7 +23,14 @@ class RondaDetailScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.labelLarge,
           ),
           const SizedBox(height: 4),
-          Text(ronda.location.isEmpty ? 'No location' : ronda.location),
+          Text(
+            [
+              if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
+              if (ronda.location.isNotEmpty) ronda.location,
+              if ((ronda.siteName ?? '').isEmpty && ronda.location.isEmpty)
+                'No location',
+            ].join(' · '),
+          ),
           if (ronda.completedAt != null) ...[
             const SizedBox(height: 4),
             Text('Finished ${ronda.completedAt!.toLocal()}'),
@@ -46,6 +53,17 @@ class RondaDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+          ],
+          if (ronda.findings.isNotEmpty) ...[
+            Text('Findings', style: Theme.of(context).textTheme.titleMedium),
+            ...ronda.findings.map(
+              (f) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(f.title),
+                subtitle: Text('${f.severity} · ${f.status}\n${f.notes}'),
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
           Text('Answers', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
