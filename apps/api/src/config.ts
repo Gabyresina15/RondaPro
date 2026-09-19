@@ -14,6 +14,9 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().default('https://api.openai.com/v1'),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_BASE_URL: z.string().default('https://generativelanguage.googleapis.com/v1beta'),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
