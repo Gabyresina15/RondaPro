@@ -86,6 +86,25 @@ class RondaRepository {
     return Ronda.fromJson(json);
   }
 
+  Future<Ronda> updateFinding({
+    required String id,
+    required String findingId,
+    String? status,
+    String? assignee,
+    String? resolutionNote,
+  }) async {
+    final json = await _api.patchJson(
+      '/rondas/$id/findings/$findingId',
+      {
+        if (status != null) 'status': status,
+        if (assignee != null) 'assignee': assignee,
+        if (resolutionNote != null) 'resolutionNote': resolutionNote,
+      },
+      auth: true,
+    );
+    return Ronda.fromJson(json);
+  }
+
   Future<Ronda> complete(String id) async {
     final json = await _api.postJson('/rondas/$id/complete', {}, auth: true);
     return Ronda.fromJson(json);

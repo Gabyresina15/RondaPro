@@ -132,4 +132,34 @@ class RondasController extends ChangeNotifier {
     _current = ronda;
     notifyListeners();
   }
+
+  void _replace(Ronda ronda) {
+    _current = ronda;
+    _items = _items.map((item) => item.id == ronda.id ? ronda : item).toList();
+    notifyListeners();
+  }
+
+  Future<Ronda?> updateFinding({
+    required String rondaId,
+    required String findingId,
+    String? status,
+    String? assignee,
+    String? resolutionNote,
+  }) async {
+    try {
+      final ronda = await _repository.updateFinding(
+        id: rondaId,
+        findingId: findingId,
+        status: status,
+        assignee: assignee,
+        resolutionNote: resolutionNote,
+      );
+      _replace(ronda);
+      return ronda;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
 }
