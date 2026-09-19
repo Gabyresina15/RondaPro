@@ -113,6 +113,81 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
     }
   }
 
+  Future<void> _addFinding() async {
+    final title = TextEditingController();
+    final notes = TextEditingController();
+    var severity = 'medium';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocal) {
+            return AlertDialog(
+              title: const Text('New finding'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: title,
+                    decoration: const InputDecoration(labelText: 'Title'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: notes,
+                    decoration: const InputDecoration(labelText: 'Notes'),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: severity,
+                    items: const [
+                      DropdownMenuItem(value: 'low', child: Text('Low')),
+                      DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                      DropdownMenuItem(value: 'high', child: Text('High')),
+                    ],
+                    onChanged: (value) =>
+                        setLocal(() => severity = value ?? 'medium'),
+                    decoration: const InputDecoration(labelText: 'Severity'),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (confirmed != true || !mounted || title.text.trim().isEmpty) {
+      return;
+    }
+    setState(() => _busy = true);
+    final ok = await context.read<RondasController>().addFinding(
+          title: title.text.trim(),
+          notes: notes.text.trim(),
+          severity: severity,
+        );
+    if (mounted) {
+      setState(() => _busy = false);
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.read<RondasController>().error ?? 'Could not add finding',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _complete() async {
     setState(() => _busy = true);
     await _persistAnswers();
@@ -151,15 +226,37 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
-            ronda.location.isEmpty
-                ? 'Location not specified'
-                : ronda.location,
+            [
+              if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
+              if (ronda.location.isNotEmpty) ronda.location,
+              if ((ronda.siteName ?? '').isEmpty && ronda.location.isEmpty)
+                'Location not specified',
+            ].join(' · '),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text('${ronda.photos.length}/2 photos minimum'),
           const SizedBox(height: 16),
           ..._answers.map(_answerCard),
+          const SizedBox(height: 8),
+          if (ronda.findings.isNotEmpty) ...[
+            Text('Findings', style: Theme.of(context).textTheme.titleMedium),
+            ...ronda.findings.map(
+              (f) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  f.isOpen ? Icons.report_outlined : Icons.check,
+                ),
+                title: Text(f.title),
+                subtitle: Text('${f.severity} · ${f.status}'),
+              ),
+            ),
+          ],
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _addFinding,
+            icon: const Icon(Icons.flag_outlined),
+            label: const Text('Add finding'),
+          ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _busy ? null : _addDemoPhotos,
