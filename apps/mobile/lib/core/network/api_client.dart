@@ -79,6 +79,20 @@ class ApiClient {
     return _decodeMap(response);
   }
 
+  Future<List<int>> getBytes(String path, {bool auth = false}) async {
+    final response = await _http.get(
+      _uri(path),
+      headers: _headers(auth: auth),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response.bodyBytes;
+    }
+    throw ApiException(
+      response.statusCode,
+      _extractMessage(response.body) ?? 'Request failed',
+    );
+  }
+
   Future<void> delete(String path, {bool auth = false}) async {
     final response = await _http.delete(
       _uri(path),

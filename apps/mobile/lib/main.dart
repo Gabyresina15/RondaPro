@@ -6,9 +6,11 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/home/presentation/home_shell.dart';
+import 'features/rondas/data/ronda_repository.dart';
+import 'features/rondas/presentation/rondas_controller.dart';
 import 'features/templates/data/template_repository.dart';
 import 'features/templates/presentation/templates_controller.dart';
-import 'features/templates/presentation/templates_list_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,15 +25,20 @@ class RondaProApp extends StatelessWidget {
     final api = ApiClient();
     final authRepository = AuthRepository(api);
     final templateRepository = TemplateRepository(api);
+    final rondaRepository = RondaRepository(api);
 
     return MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: api),
+        Provider<RondaRepository>.value(value: rondaRepository),
         ChangeNotifierProvider(
           create: (_) => AuthController(authRepository),
         ),
         ChangeNotifierProvider(
           create: (_) => TemplatesController(templateRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RondasController(rondaRepository),
         ),
       ],
       child: MaterialApp(
@@ -51,7 +58,7 @@ class _AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     if (auth.isAuthenticated) {
-      return const TemplatesListScreen();
+      return const HomeShell();
     }
     return const LoginScreen();
   }

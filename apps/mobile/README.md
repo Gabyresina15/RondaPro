@@ -1,6 +1,6 @@
 # RondaPro Mobile
 
-Flutter (Material 3) client for RondaPro vertical slice #1: login + checklist templates.
+Flutter (Material 3) client for RondaPro vertical slice #2: login, templates, rondas, photos, LLM summary, historial.
 
 ## Requirements
 
@@ -32,9 +32,11 @@ flutter run
 
 Demo credentials (after API seed): `demo@rondapro.local` / `Demo1234!`
 
+Flow: login → Templates tab → tap a template → fill answers → add ≥2 photos (gallery or “Add 2 demo photos”) → Complete ronda → summary → Historial tab.
+
 ## Platform scaffolding
 
-This tree includes Android stubs and the full `lib/` app. If `flutter create` was never run on your machine, generate missing platform files without overwriting Dart sources:
+If `flutter create` was never run on your machine:
 
 ```bash
 cd apps/mobile

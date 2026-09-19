@@ -40,6 +40,7 @@ async function seed(): Promise<void> {
         { label: 'Entrance clean and clear', required: true, type: 'bool' },
         { label: 'Shelf stock notes', required: false, type: 'text' },
         { label: 'Photo of promo display', required: true, type: 'photo' },
+        { label: 'Photo of emergency exit', required: true, type: 'photo' },
         { label: 'Emergency exits unobstructed', required: true, type: 'bool' },
       ],
     });

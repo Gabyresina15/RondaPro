@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../auth/presentation/auth_controller.dart';
+import '../../rondas/presentation/perform_ronda_screen.dart';
+import '../../rondas/presentation/rondas_controller.dart';
 import 'create_template_screen.dart';
 import 'templates_controller.dart';
 
 class TemplatesListScreen extends StatefulWidget {
-  const TemplatesListScreen({super.key});
+  const TemplatesListScreen({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   State<TemplatesListScreen> createState() => _TemplatesListScreenState();
@@ -26,22 +30,24 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     final auth = context.watch<AuthController>();
     final templates = context.watch<TemplatesController>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Checklist templates'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: templates.loading ? null : () => templates.load(),
-            icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            tooltip: 'Sign out',
-            onPressed: () => auth.logout(),
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
+    final body = Scaffold(
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: const Text('Checklist templates'),
+              actions: [
+                IconButton(
+                  tooltip: 'Refresh',
+                  onPressed: templates.loading ? null : () => templates.load(),
+                  icon: const Icon(Icons.refresh),
+                ),
+                IconButton(
+                  tooltip: 'Sign out',
+                  onPressed: () => auth.logout(),
+                  icon: const Icon(Icons.logout),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final created = await Navigator.of(context).push<bool>(
@@ -58,6 +64,64 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
       ),
       body: _buildBody(templates, auth),
     );
+    return body;
+  }
+
+  Future<void> _startRonda(BuildContext context, String templateId) async {
+    final locationController = TextEditingController();
+    final location = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Start ronda'),
+          content: TextField(
+            controller: locationController,
+            decoration: const InputDecoration(
+              labelText: 'Location (optional)',
+              hintText: 'Store 12 — Palermo',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, locationController.text),
+              child: const Text('Start'),
+            ),
+          ],
+        );
+      },
+    );
+    if (location == null || !context.mounted) {
+      return;
+    }
+    final ronda = await context.read<RondasController>().start(
+          templateId: templateId,
+          location: location.trim(),
+        );
+    if (!context.mounted) {
+      return;
+    }
+    if (ronda == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.read<RondasController>().error ?? 'Could not start ronda',
+          ),
+        ),
+      );
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PerformRondaScreen(ronda: ronda),
+      ),
+    );
+    if (context.mounted) {
+      await context.read<RondasController>().loadHistory();
+    }
   }
 
   Widget _buildBody(TemplatesController templates, AuthController auth) {
@@ -104,13 +168,14 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               title: Text(item.name),
               subtitle: Text(
                 item.description.isEmpty
-                    ? '${item.items.length} item(s)'
-                    : '${item.description}\n${item.items.length} item(s)',
+                    ? '${item.items.length} item(s) · tap to start ronda'
+                    : '${item.description}\n${item.items.length} item(s) · tap to start ronda',
               ),
               isThreeLine: item.description.isNotEmpty,
               leading: CircleAvatar(
                 child: Text('${item.items.length}'),
               ),
+              onTap: () => _startRonda(context, item.id),
             ),
           );
         },

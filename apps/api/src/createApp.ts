@@ -2,31 +2,66 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { LoginUser } from './application/auth/LoginUser.js';
 import { RegisterUser } from './application/auth/RegisterUser.js';
+import { AddRondaPhotos } from './application/rondas/AddRondaPhotos.js';
+import { CompleteRonda } from './application/rondas/CompleteRonda.js';
+import { GetRonda } from './application/rondas/GetRonda.js';
+import { GetRondaPhoto } from './application/rondas/GetRondaPhoto.js';
+import { ListRondas } from './application/rondas/ListRondas.js';
+import { SaveRondaAnswers } from './application/rondas/SaveRondaAnswers.js';
+import { StartRonda } from './application/rondas/StartRonda.js';
 import { CreateTemplate } from './application/templates/CreateTemplate.js';
 import { DeleteTemplate } from './application/templates/DeleteTemplate.js';
 import { GetTemplate } from './application/templates/GetTemplate.js';
 import { ListTemplates } from './application/templates/ListTemplates.js';
 import { UpdateTemplate } from './application/templates/UpdateTemplate.js';
 import { MongoChecklistTemplateRepository } from './adapters/persistence/MongoChecklistTemplateRepository.js';
+import { MongoRondaRepository } from './adapters/persistence/MongoRondaRepository.js';
 import { MongoUserRepository } from './adapters/persistence/MongoUserRepository.js';
 import { BcryptPasswordHasher } from './adapters/security/BcryptPasswordHasher.js';
 import { JwtTokenService } from './adapters/security/JwtTokenService.js';
+import { LocalPhotoStorage } from './adapters/storage/LocalPhotoStorage.js';
+import { HeuristicSummaryGenerator } from './adapters/llm/HeuristicSummaryGenerator.js';
+import {
+  FallbackSummaryGenerator,
+  OpenAiSummaryGenerator,
+} from './adapters/llm/OpenAiSummaryGenerator.js';
 import { authPlugin } from './adapters/http/plugins/authPlugin.js';
 import { containerPlugin } from './adapters/http/plugins/containerPlugin.js';
 import { authRoutes } from './adapters/http/routes/authRoutes.js';
 import { healthRoutes } from './adapters/http/routes/healthRoutes.js';
+import { rondaRoutes } from './adapters/http/routes/rondaRoutes.js';
 import { templateRoutes } from './adapters/http/routes/templateRoutes.js';
 import type { AppConfig } from './config.js';
+import type { SummaryGenerator } from './domain/ports/SummaryGenerator.js';
+
+function buildSummaryGenerator(config: AppConfig): SummaryGenerator {
+  const heuristic = new HeuristicSummaryGenerator();
+  if (!config.OPENAI_API_KEY) {
+    return heuristic;
+  }
+  return new FallbackSummaryGenerator(
+    new OpenAiSummaryGenerator({
+      apiKey: config.OPENAI_API_KEY,
+      baseUrl: config.OPENAI_BASE_URL,
+      model: config.OPENAI_MODEL,
+    }),
+    heuristic,
+  );
+}
 
 export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   const app = Fastify({
     logger: true,
+    bodyLimit: 15 * 1024 * 1024,
   });
 
   const users = new MongoUserRepository();
   const templates = new MongoChecklistTemplateRepository();
+  const rondas = new MongoRondaRepository();
+  const photos = new LocalPhotoStorage(config.UPLOAD_DIR);
   const hasher = new BcryptPasswordHasher();
   const tokens = new JwtTokenService(config.JWT_SECRET, config.JWT_EXPIRES_IN);
+  const summaries = buildSummaryGenerator(config);
 
   const container = {
     registerUser: new RegisterUser(users, hasher, tokens),
@@ -36,6 +71,13 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     getTemplate: new GetTemplate(templates),
     updateTemplate: new UpdateTemplate(templates),
     deleteTemplate: new DeleteTemplate(templates),
+    startRonda: new StartRonda(rondas, templates),
+    listRondas: new ListRondas(rondas),
+    getRonda: new GetRonda(rondas),
+    saveRondaAnswers: new SaveRondaAnswers(rondas),
+    addRondaPhotos: new AddRondaPhotos(rondas, photos),
+    completeRonda: new CompleteRonda(rondas, templates, summaries),
+    getRondaPhoto: new GetRondaPhoto(rondas, photos),
   };
 
   await app.register(cors, {
@@ -46,6 +88,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(templateRoutes);
+  await app.register(rondaRoutes);
 
   return app;
 }

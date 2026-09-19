@@ -10,6 +10,10 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().int().positive().default(3000),
   CORS_ORIGIN: z.string().default('*'),
+  UPLOAD_DIR: z.string().default('./uploads'),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_BASE_URL: z.string().default('https://api.openai.com/v1'),
+  OPENAI_MODEL: z.string().default('gpt-4o-mini'),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
