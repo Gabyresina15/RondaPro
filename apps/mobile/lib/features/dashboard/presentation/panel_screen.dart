@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../rondas/domain/ronda.dart';
+import '../../rondas/presentation/ronda_detail_screen.dart';
+import '../../rondas/presentation/rondas_controller.dart';
 import '../../sites/presentation/sites_controller.dart';
 import 'dashboard_controller.dart';
 
@@ -21,6 +24,7 @@ class _PanelScreenState extends State<PanelScreen> {
       }
       context.read<DashboardController>().load();
       context.read<SitesController>().load();
+      context.read<RondasController>().loadHistory();
     });
   }
 
@@ -28,6 +32,7 @@ class _PanelScreenState extends State<PanelScreen> {
     await Future.wait([
       context.read<DashboardController>().load(),
       context.read<SitesController>().load(),
+      context.read<RondasController>().loadHistory(),
     ]);
   }
 
@@ -94,7 +99,13 @@ class _PanelScreenState extends State<PanelScreen> {
   Widget build(BuildContext context) {
     final dashboard = context.watch<DashboardController>();
     final sites = context.watch<SitesController>();
+    final rondas = context.watch<RondasController>();
     final stats = dashboard.stats;
+    final openFindings = <({Ronda ronda, RondaFinding finding})>[
+      for (final ronda in rondas.items)
+        for (final finding in ronda.findings)
+          if (finding.isOpen) (ronda: ronda, finding: finding),
+    ];
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -137,6 +148,33 @@ class _PanelScreenState extends State<PanelScreen> {
                   value: '${stats.findingsHigh}',
                 ),
               ],
+            ),
+          const SizedBox(height: 24),
+          Text('Open findings', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          if (openFindings.isEmpty)
+            const Text('No open findings.')
+          else
+            ...openFindings.map(
+              (entry) => Card(
+                child: ListTile(
+                  leading: const Icon(Icons.flag_outlined),
+                  title: Text(entry.finding.title),
+                  subtitle: Text(
+                    [
+                      entry.ronda.siteName ?? entry.ronda.templateName,
+                      entry.finding.severity,
+                    ].join(' · '),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RondaDetailScreen(ronda: entry.ronda),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           const SizedBox(height: 24),
           ListTile(
