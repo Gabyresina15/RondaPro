@@ -1,6 +1,6 @@
 export type RondaStatus = 'in_progress' | 'completed';
 export type FindingSeverity = 'low' | 'medium' | 'high';
-export type FindingStatus = 'open' | 'resolved';
+export type FindingStatus = 'open' | 'resolved' | 'closed';
 
 export interface RondaAnswer {
   itemIndex: number;
@@ -26,6 +26,10 @@ export interface Finding {
   severity: FindingSeverity;
   status: FindingStatus;
   itemIndex?: number;
+  assignee?: string;
+  resolutionNote?: string;
+  resolvedAt?: Date;
+  resolvedBy?: string;
   createdAt: Date;
 }
 

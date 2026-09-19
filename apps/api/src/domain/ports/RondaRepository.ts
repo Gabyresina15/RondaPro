@@ -41,6 +41,12 @@ export interface RondaRepository {
     ownerId: string,
     findingId: string,
   ): Promise<Ronda | null>;
+  updateFinding(
+    id: string,
+    ownerId: string,
+    findingId: string,
+    patch: Partial<Finding>,
+  ): Promise<Ronda | null>;
   complete(
     id: string,
     ownerId: string,

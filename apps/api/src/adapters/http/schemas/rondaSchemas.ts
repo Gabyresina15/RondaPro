@@ -52,3 +52,9 @@ export const addPhotosBodySchema = z.object({
     .min(1)
     .max(8),
 });
+
+export const updateFindingBodySchema = z.object({
+  status: z.enum(['open', 'closed', 'resolved']).optional(),
+  assignee: z.string().max(120).optional(),
+  resolutionNote: z.string().max(2000).optional(),
+});
