@@ -17,10 +17,15 @@ class RondaRepository {
   Future<Ronda> start({
     required String templateId,
     required String location,
+    String? siteId,
   }) async {
     final json = await _api.postJson(
       '/rondas',
-      {'templateId': templateId, 'location': location},
+      {
+        'templateId': templateId,
+        'location': location,
+        if (siteId != null) 'siteId': siteId,
+      },
       auth: true,
     );
     return Ronda.fromJson(json);
@@ -47,6 +52,35 @@ class RondaRepository {
     final json = await _api.postJson(
       '/rondas/$id/photos',
       {'photos': photos},
+      auth: true,
+    );
+    return Ronda.fromJson(json);
+  }
+
+  Future<Ronda> addFinding({
+    required String id,
+    required String title,
+    required String notes,
+    required String severity,
+    int? itemIndex,
+  }) async {
+    final json = await _api.postJson(
+      '/rondas/$id/findings',
+      {
+        'title': title,
+        'notes': notes,
+        'severity': severity,
+        if (itemIndex != null) 'itemIndex': itemIndex,
+      },
+      auth: true,
+    );
+    return Ronda.fromJson(json);
+  }
+
+  Future<Ronda> resolveFinding(String id, String findingId) async {
+    final json = await _api.postJson(
+      '/rondas/$id/findings/$findingId/resolve',
+      {},
       auth: true,
     );
     return Ronda.fromJson(json);
