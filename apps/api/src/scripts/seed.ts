@@ -3,6 +3,8 @@ import { connectMongo, disconnectMongo } from '../adapters/persistence/mongoConn
 import { MongoUserRepository } from '../adapters/persistence/MongoUserRepository.js';
 import { MongoChecklistTemplateRepository } from '../adapters/persistence/MongoChecklistTemplateRepository.js';
 import { MongoSiteRepository } from '../adapters/persistence/MongoSiteRepository.js';
+import { RondaModel } from '../adapters/persistence/RondaModel.js';
+import { randomUUID } from 'node:crypto';
 import { BcryptPasswordHasher } from '../adapters/security/BcryptPasswordHasher.js';
 
 const DEMO_EMAIL = 'demo@rondapro.local';
@@ -62,6 +64,48 @@ async function seed(): Promise<void> {
     console.log(`Created site: ${site.name} (${site.id})`);
   } else {
     console.log('Demo site already exists');
+  }
+
+  const site = (await sites.findByOwner(user.id)).find((s) => s.name === 'Store 12 — Palermo');
+  const template = (await templates.findByOwner(user.id)).find((t) => t.name === 'Retail floor checklist');
+  const existingRondas = await RondaModel.find({ ownerId: user.id }).exec();
+  const hasDemoFinding = existingRondas.some((r) =>
+    (r.findings ?? []).some((f) => f.title === 'Blocked emergency exit'),
+  );
+  if (template && site && !hasDemoFinding) {
+    await RondaModel.create({
+      templateId: template.id,
+      templateName: template.name,
+      ownerId: user.id,
+      siteId: site.id,
+      siteName: site.name,
+      location: 'Emergency stairwell',
+      status: 'completed',
+      answers: template.items.map((item, itemIndex) => ({
+        itemIndex,
+        label: item.label,
+        type: item.type,
+        boolValue: item.type === 'bool' ? item.label !== 'Emergency exits unobstructed' : undefined,
+        textValue: item.type === 'text' ? 'One gondola needs restock' : undefined,
+      })),
+      photos: [],
+      findings: [
+        {
+          id: randomUUID(),
+          title: 'Blocked emergency exit',
+          notes: 'Cartons stacked in front of the rear exit.',
+          severity: 'high',
+          status: 'open',
+          createdAt: new Date(),
+        },
+      ],
+      summary: 'Demo ronda with one open high-severity finding at Store 12 — Palermo.',
+      summarySource: 'heuristic',
+      completedAt: new Date(),
+    });
+    console.log('Created demo completed ronda with open finding');
+  } else {
+    console.log('Demo finding ronda already exists or template/site missing');
   }
 
   console.log('');
