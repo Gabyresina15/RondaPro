@@ -43,6 +43,10 @@ function toDomain(doc: RondaDocument): Ronda {
       severity: f.severity as Finding['severity'],
       status: f.status as Finding['status'],
       itemIndex: f.itemIndex ?? undefined,
+      assignee: f.assignee ?? undefined,
+      resolutionNote: f.resolutionNote ?? undefined,
+      resolvedAt: f.resolvedAt ?? undefined,
+      resolvedBy: f.resolvedBy ?? undefined,
       createdAt: f.createdAt,
     })),
     summary: doc.summary ?? undefined,
@@ -126,9 +130,29 @@ export class MongoRondaRepository implements RondaRepository {
     ownerId: string,
     findingId: string,
   ): Promise<Ronda | null> {
+    return this.updateFinding(id, ownerId, findingId, {
+      status: 'resolved',
+      resolvedAt: new Date(),
+    });
+  }
+
+  async updateFinding(
+    id: string,
+    ownerId: string,
+    findingId: string,
+    patch: Partial<Finding>,
+  ): Promise<Ronda | null> {
+    const set: Record<string, unknown> = {};
+    if (patch.status !== undefined) set['findings.$.status'] = patch.status;
+    if (patch.assignee !== undefined) set['findings.$.assignee'] = patch.assignee;
+    if (patch.resolutionNote !== undefined) {
+      set['findings.$.resolutionNote'] = patch.resolutionNote;
+    }
+    if ('resolvedAt' in patch) set['findings.$.resolvedAt'] = patch.resolvedAt ?? null;
+    if ('resolvedBy' in patch) set['findings.$.resolvedBy'] = patch.resolvedBy ?? '';
     const doc = await RondaModel.findOneAndUpdate(
       { _id: id, ownerId, 'findings.id': findingId },
-      { $set: { 'findings.$.status': 'resolved' } },
+      { $set: set },
       { new: true },
     ).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
