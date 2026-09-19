@@ -23,6 +23,29 @@ const photoSchema = new Schema(
   { _id: false },
 );
 
+const findingSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
+    notes: { type: String, required: true, default: '', trim: true },
+    severity: {
+      type: String,
+      required: true,
+      enum: ['low', 'medium', 'high'],
+      default: 'medium',
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ['open', 'resolved'],
+      default: 'open',
+    },
+    itemIndex: { type: Number, required: false },
+    createdAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
 const rondaSchema = new Schema(
   {
     templateId: {
@@ -38,6 +61,13 @@ const rondaSchema = new Schema(
       required: true,
       index: true,
     },
+    siteId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Site',
+      required: false,
+      index: true,
+    },
+    siteName: { type: String, required: false, trim: true },
     location: { type: String, required: true, default: '', trim: true },
     status: {
       type: String,
@@ -48,6 +78,7 @@ const rondaSchema = new Schema(
     },
     answers: { type: [answerSchema], required: true, default: [] },
     photos: { type: [photoSchema], required: true, default: [] },
+    findings: { type: [findingSchema], required: true, default: [] },
     summary: { type: String, required: false },
     summarySource: { type: String, required: false, enum: ['llm', 'heuristic'] },
     completedAt: { type: Date, required: false },

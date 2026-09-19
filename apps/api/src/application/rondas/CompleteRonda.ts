@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import type { ChecklistTemplateRepository } from '../../domain/ports/ChecklistTemplateRepository.js';
-import type { Ronda } from '../../domain/entities/Ronda.js';
+import type { Finding, Ronda } from '../../domain/entities/Ronda.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 import type { SummaryGenerator } from '../../domain/ports/SummaryGenerator.js';
 import { RondaAlreadyCompletedError } from './SaveRondaAnswers.js';
@@ -59,15 +60,43 @@ export class CompleteRonda {
       }
     }
 
-    const generated = await this.summaries.generate(ronda);
+    const findings = mergeAutoFindings(ronda);
+    const forSummary = { ...ronda, findings };
+    const generated = await this.summaries.generate(forSummary);
     const completed = await this.rondas.complete(id, ownerId, {
       summary: generated.text,
       summarySource: generated.source,
       completedAt: new Date(),
+      findings,
     });
     if (!completed) {
       throw new RondaAlreadyCompletedError(id);
     }
     return completed;
   }
+}
+
+function mergeAutoFindings(ronda: Ronda): Finding[] {
+  const findings = [...ronda.findings];
+  for (const answer of ronda.answers) {
+    if (answer.type !== 'bool' || answer.boolValue !== false) {
+      continue;
+    }
+    const already = findings.some(
+      (f) => f.itemIndex === answer.itemIndex && f.status === 'open',
+    );
+    if (already) {
+      continue;
+    }
+    findings.push({
+      id: randomUUID(),
+      title: `Failed check: ${answer.label}`,
+      notes: 'Automatically created from a failed boolean item',
+      severity: 'medium',
+      status: 'open',
+      itemIndex: answer.itemIndex,
+      createdAt: new Date(),
+    });
+  }
+  return findings;
 }
