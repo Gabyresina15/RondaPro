@@ -36,6 +36,7 @@ class RondasController extends ChangeNotifier {
   Future<Ronda?> start({
     required String templateId,
     required String location,
+    String? siteId,
   }) async {
     _error = null;
     notifyListeners();
@@ -43,6 +44,7 @@ class RondasController extends ChangeNotifier {
       _current = await _repository.start(
         templateId: templateId,
         location: location,
+        siteId: siteId,
       );
       notifyListeners();
       return _current;
@@ -76,6 +78,31 @@ class RondasController extends ChangeNotifier {
     }
     try {
       _current = await _repository.addPhotos(id: id, photos: photos);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> addFinding({
+    required String title,
+    required String notes,
+    required String severity,
+  }) async {
+    final id = _current?.id;
+    if (id == null) {
+      return false;
+    }
+    try {
+      _current = await _repository.addFinding(
+        id: id,
+        title: title,
+        notes: notes,
+        severity: severity,
+      );
       notifyListeners();
       return true;
     } catch (e) {

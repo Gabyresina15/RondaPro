@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'perform_ronda_screen.dart';
 import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
 
@@ -67,15 +68,26 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
               title: Text(item.templateName),
               subtitle: Text(
                 [
-                  item.location.isEmpty ? 'No location' : item.location,
+                  item.siteName ??
+                      (item.location.isEmpty ? 'No location' : item.location),
                   item.isCompleted ? 'Completed' : 'In progress',
                   '${item.photos.length} photos',
+                  '${item.findings.where((f) => f.isOpen).length} open findings',
                 ].join(' · '),
               ),
               onTap: () {
+                if (item.isCompleted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RondaDetailScreen(ronda: item),
+                    ),
+                  );
+                  return;
+                }
+                context.read<RondasController>().setCurrent(item);
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => RondaDetailScreen(ronda: item),
+                    builder: (_) => PerformRondaScreen(ronda: item),
                   ),
                 );
               },
