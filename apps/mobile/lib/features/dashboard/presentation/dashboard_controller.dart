@@ -17,11 +17,14 @@ class DashboardController extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> load() async {
-    _loading = true;
+    _loading = _stats == null;
     _error = null;
-    notifyListeners();
+    if (_loading) {
+      notifyListeners();
+    }
     try {
-      _stats = await _repository.load();
+      final stats = await _repository.load();
+      _stats = stats;
       _loading = false;
       notifyListeners();
     } catch (e) {

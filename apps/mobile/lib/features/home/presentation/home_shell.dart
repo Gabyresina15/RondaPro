@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../auth/presentation/auth_controller.dart';
-import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../dashboard/presentation/panel_screen.dart';
 import '../../rondas/presentation/history_list_screen.dart';
 import '../../templates/presentation/templates_list_screen.dart';
@@ -19,6 +18,17 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _titles = ['Templates', 'Historial', 'Panel'];
 
+  Widget _page(int index) {
+    switch (index) {
+      case 1:
+        return const HistoryListScreen();
+      case 2:
+        return const PanelScreen();
+      default:
+        return const TemplatesListScreen(embedded: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
@@ -33,26 +43,14 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _index,
-        children: const [
-          TemplatesListScreen(embedded: true),
-          HistoryListScreen(),
-          PanelScreen(),
-        ],
-      ),
+      body: _page(_index),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) {
-          setState(() => _index = value);
-          if (value == 2) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) {
-                return;
-              }
-              context.read<DashboardController>().load();
-            });
+          if (value == _index) {
+            return;
           }
+          setState(() => _index = value);
         },
         destinations: const [
           NavigationDestination(
