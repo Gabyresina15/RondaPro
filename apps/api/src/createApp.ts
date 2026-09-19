@@ -6,6 +6,7 @@ import { GetDashboard } from './application/dashboard/GetDashboard.js';
 import { AddFinding } from './application/rondas/AddFinding.js';
 import { AddRondaPhotos } from './application/rondas/AddRondaPhotos.js';
 import { CompleteRonda } from './application/rondas/CompleteRonda.js';
+import { ExportRondaPdf } from './application/rondas/ExportRondaPdf.js';
 import { GetRonda } from './application/rondas/GetRonda.js';
 import { GetRondaPhoto } from './application/rondas/GetRondaPhoto.js';
 import { ListRondas } from './application/rondas/ListRondas.js';
@@ -87,6 +88,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     startRonda: new StartRonda(rondas, templates, sites),
     listRondas: new ListRondas(rondas),
     getRonda: new GetRonda(rondas),
+    exportRondaPdf: new ExportRondaPdf(rondas),
     saveRondaAnswers: new SaveRondaAnswers(rondas),
     addRondaPhotos: new AddRondaPhotos(rondas, photos),
     completeRonda: new CompleteRonda(rondas, templates, summaries),
