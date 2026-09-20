@@ -5,12 +5,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../data/ronda_repository.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../sites/presentation/sites_controller.dart';
+import '../data/ronda_repository.dart';
+import '../domain/ronda.dart';
+import 'assign_ronda_sheet.dart';
 import 'perform_ronda_screen.dart';
 import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
-import '../domain/ronda.dart';
 
 class HistoryListScreen extends StatefulWidget {
   const HistoryListScreen({super.key});
@@ -48,29 +50,13 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
     }).toList();
   }
 
-  Future<void> _export(BuildContext context, Ronda item) async {
-    try {
-      final bytes = await context.read<RondaRepository>().exportPdf(item.id);
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/rondapro-${item.id}.pdf');
-      await file.writeAsBytes(bytes, flush: true);
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/pdf')],
-        text: item.templateName,
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not export PDF: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<RondasController>();
     final sites = context.watch<SitesController>().items;
     final items = _filtered(controller.items);
+    final isSupervisor =
+        context.watch<AuthController>().user?.isSupervisor ?? false;
 
     return Column(
       children: [
@@ -122,12 +108,16 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
             ],
           ),
         ),
-        Expanded(child: _list(controller, items)),
+        Expanded(child: _list(controller, items, isSupervisor)),
       ],
     );
   }
 
-  Widget _list(RondasController controller, List<Ronda> items) {
+  Widget _list(
+    RondasController controller,
+    List<Ronda> items,
+    bool isSupervisor,
+  ) {
     if (controller.loading && controller.items.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -176,13 +166,46 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                   '${item.findings.where((f) => f.isOpen).length} open findings',
                 ].join(' · '),
               ),
-              trailing: item.isCompleted
-                  ? IconButton(
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isSupervisor)
+                    IconButton(
+                      tooltip: 'Asignar',
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      onPressed: () => showAssignRondaSheet(
+                        context: context,
+                        rondaId: item.id,
+                      ),
+                    ),
+                  if (item.isCompleted)
+                    IconButton(
                       tooltip: 'Export PDF',
                       icon: const Icon(Icons.picture_as_pdf_outlined),
-                      onPressed: () => _export(context, item),
-                    )
-                  : null,
+                      onPressed: () async {
+                        try {
+                          final bytes = await context
+                              .read<RondaRepository>()
+                              .exportPdf(item.id);
+                          final dir = await getTemporaryDirectory();
+                          final file = File(
+                            '${dir.path}/rondapro-${item.id}.pdf',
+                          );
+                          await file.writeAsBytes(bytes, flush: true);
+                          await Share.shareXFiles(
+                            [XFile(file.path, mimeType: 'application/pdf')],
+                            text: item.templateName,
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Could not export PDF: $e')),
+                          );
+                        }
+                      },
+                    ),
+                ],
+              ),
               onTap: () {
                 if (item.isCompleted) {
                   Navigator.of(context).push(
