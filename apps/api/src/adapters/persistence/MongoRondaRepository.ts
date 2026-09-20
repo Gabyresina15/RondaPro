@@ -17,6 +17,10 @@ function toDomain(doc: RondaDocument): Ronda {
     templateId: String(doc.templateId),
     templateName: doc.templateName,
     ownerId: String(doc.ownerId),
+    assigneeId: (doc as RondaDocument & { assigneeId?: unknown }).assigneeId
+      ? String((doc as RondaDocument & { assigneeId?: unknown }).assigneeId)
+      : undefined,
+    assigneeName: (doc as RondaDocument & { assigneeName?: string }).assigneeName,
     siteId: doc.siteId ? String(doc.siteId) : undefined,
     siteName: doc.siteName ?? undefined,
     location: doc.location,
@@ -75,10 +79,30 @@ export class MongoRondaRepository implements RondaRepository {
   }
 
   async findByOwner(ownerId: string): Promise<Ronda[]> {
-    const docs = await RondaModel.find({ ownerId })
+    const docs = await RondaModel.find({
+      $or: [{ ownerId }, { assigneeId: ownerId }],
+    })
       .sort({ createdAt: -1 })
       .exec();
     return docs.map((d) => toDomain(d as RondaDocument));
+  }
+
+  async findAll(): Promise<Ronda[]> {
+    const docs = await RondaModel.find({}).sort({ createdAt: -1 }).exec();
+    return docs.map((d) => toDomain(d as RondaDocument));
+  }
+
+  async assign(
+    id: string,
+    assigneeId: string,
+    assigneeName: string,
+  ): Promise<Ronda | null> {
+    const doc = await RondaModel.findByIdAndUpdate(
+      id,
+      { $set: { assigneeId, assigneeName } },
+      { new: true },
+    ).exec();
+    return doc ? toDomain(doc as RondaDocument) : null;
   }
 
   async findById(id: string): Promise<Ronda | null> {
