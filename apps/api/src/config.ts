@@ -11,7 +11,7 @@ const optionalKey = z
   .string()
   .optional()
   .transform((value) => {
-    const trimmed = value?.trim();
+    const trimmed = value?.trim().replace(/^[\'\"]|[\'\"]$/g, '').trim();
     return trimmed ? trimmed : undefined;
   });
 
@@ -27,7 +27,7 @@ const envSchema = z.object({
   OPENAI_BASE_URL: z.string().default('https://api.openai.com/v1'),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   GEMINI_API_KEY: optionalKey,
-  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
   GEMINI_BASE_URL: z.string().default('https://generativelanguage.googleapis.com/v1beta'),
 });
 
