@@ -1,8 +1,11 @@
+export type UserRole = 'auditor' | 'supervisor';
+
 export interface User {
   id: string;
   email: string;
   passwordHash: string;
   name: string;
+  role: UserRole;
   createdAt: Date;
 }
 
@@ -13,6 +16,7 @@ export function toUserPublic(user: User): UserPublic {
     id: user.id,
     email: user.email,
     name: user.name,
+    role: user.role,
     createdAt: user.createdAt,
   };
 }
