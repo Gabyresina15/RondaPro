@@ -10,6 +10,7 @@ import { BcryptPasswordHasher } from '../adapters/security/BcryptPasswordHasher.
 const DEMO_EMAIL = 'demo@rondapro.local';
 const DEMO_PASSWORD = 'Demo1234!';
 const DEMO_NAME = 'Demo Auditor';
+const SUPER_EMAIL = 'supervisor@rondapro.local';
 
 async function seed(): Promise<void> {
   const config = loadConfig();
@@ -27,10 +28,24 @@ async function seed(): Promise<void> {
       email: DEMO_EMAIL,
       passwordHash,
       name: DEMO_NAME,
+      role: 'auditor',
     });
     console.log(`Created demo user: ${DEMO_EMAIL}`);
   } else {
     console.log(`Demo user already exists: ${DEMO_EMAIL}`);
+  }
+
+  let supervisor = await users.findByEmail(SUPER_EMAIL);
+  if (!supervisor) {
+    supervisor = await users.create({
+      email: SUPER_EMAIL,
+      passwordHash: await hasher.hash(DEMO_PASSWORD),
+      name: 'Demo Supervisor',
+      role: 'supervisor',
+    });
+    console.log(`Created supervisor: ${SUPER_EMAIL}`);
+  } else {
+    console.log(`Supervisor already exists: ${SUPER_EMAIL}`);
   }
 
   const existing = await templates.findByOwner(user.id);
@@ -110,8 +125,8 @@ async function seed(): Promise<void> {
 
   console.log('');
   console.log('Seed complete. Login with:');
-  console.log(`  email:    ${DEMO_EMAIL}`);
-  console.log(`  password: ${DEMO_PASSWORD}`);
+  console.log(`  auditor:     ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  console.log(`  supervisor:  ${SUPER_EMAIL} / ${DEMO_PASSWORD}`);
 
   await disconnectMongo();
 }
