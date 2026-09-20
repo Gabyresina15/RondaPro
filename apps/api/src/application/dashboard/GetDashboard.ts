@@ -23,8 +23,8 @@ export class GetDashboard {
   async execute(ownerId: string): Promise<DashboardStats> {
     const [rondas, templates, sites] = await Promise.all([
       this.rondas.findByOwner(ownerId),
-      this.templates.findByOwner(ownerId),
-      this.sites.findByOwner(ownerId),
+      this.templates.findAll(),
+      this.sites.findAll(),
     ]);
 
     const completed = rondas.filter((r) => r.status === 'completed');
