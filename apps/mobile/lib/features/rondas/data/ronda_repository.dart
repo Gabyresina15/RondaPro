@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import '../../auth/domain/user.dart';
 import '../domain/ronda.dart';
 
 class RondaRepository {
@@ -12,6 +13,23 @@ class RondaRepository {
     return items
         .map((e) => Ronda.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<User>> listUsers() async {
+    final json = await _api.getJson('/users', auth: true);
+    final items = json['items'] as List<dynamic>? ?? const [];
+    return items
+        .map((e) => User.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Ronda> assign(String id, String assigneeId) async {
+    final json = await _api.patchJson(
+      '/rondas/$id/assign',
+      {'assigneeId': assigneeId},
+      auth: true,
+    );
+    return Ronda.fromJson(json);
   }
 
   Future<Ronda> start({
