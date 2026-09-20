@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/network/api_client.dart';
@@ -63,6 +64,13 @@ class RondaProApp extends StatelessWidget {
         title: 'RondaPro',
         theme: AppTheme.light,
         debugShowCheckedModeBanner: false,
+        locale: const Locale('es'),
+        supportedLocales: const [Locale('es'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: const _AuthGate(),
       ),
     );
