@@ -75,7 +75,9 @@ export class FallbackSummaryGenerator implements SummaryGenerator {
   async generate(ronda: Ronda): Promise<GeneratedSummary> {
     try {
       return await this.primary.generate(ronda);
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[summary] LLM failed, using heuristic: ${message}`);
       return this.fallback.generate(ronda);
     }
   }
