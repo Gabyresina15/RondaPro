@@ -31,11 +31,14 @@ class ApiClient {
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
-  Map<String, String> _headers({bool auth = false}) {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
+  Map<String, String> _headers({bool auth = false, bool json = true}) {
+    final headers = <String, String>{};
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+      headers['Accept'] = 'application/json';
+    } else {
+      headers['Accept'] = '*/*';
+    }
     if (auth && _token != null) {
       headers['Authorization'] = 'Bearer $_token';
     }
@@ -82,7 +85,7 @@ class ApiClient {
   Future<List<int>> getBytes(String path, {bool auth = false}) async {
     final response = await _http.get(
       _uri(path),
-      headers: _headers(auth: auth),
+      headers: _headers(auth: auth, json: false),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response.bodyBytes;
