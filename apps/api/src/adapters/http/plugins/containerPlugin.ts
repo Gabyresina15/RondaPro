@@ -1,5 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
+import type { ListNotifications } from '../../../application/notifications/ListNotifications.js';
+import type { MarkNotificationRead } from '../../../application/notifications/MarkNotificationRead.js';
 import type { ListUsers } from '../../../application/auth/ListUsers.js';
 import type { LoginUser } from '../../../application/auth/LoginUser.js';
 import type { RegisterUser } from '../../../application/auth/RegisterUser.js';
@@ -31,6 +33,8 @@ export interface AppContainer {
   registerUser: RegisterUser;
   loginUser: LoginUser;
   listUsers: ListUsers;
+  listNotifications: ListNotifications;
+  markNotificationRead: MarkNotificationRead;
   createTemplate: CreateTemplate;
   listTemplates: ListTemplates;
   getTemplate: GetTemplate;
