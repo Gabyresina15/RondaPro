@@ -162,4 +162,16 @@ class RondasController extends ChangeNotifier {
       return null;
     }
   }
+
+  Future<Ronda?> assign(String rondaId, String assigneeId) async {
+    try {
+      final ronda = await _repository.assign(rondaId, assigneeId);
+      _replace(ronda);
+      return ronda;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
 }
