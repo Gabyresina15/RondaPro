@@ -38,6 +38,8 @@ export interface Ronda {
   templateId: string;
   templateName: string;
   ownerId: string;
+  assigneeId?: string;
+  assigneeName?: string;
   siteId?: string;
   siteName?: string;
   location: string;

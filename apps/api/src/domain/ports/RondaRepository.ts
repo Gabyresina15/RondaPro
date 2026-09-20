@@ -20,6 +20,8 @@ export interface CompleteRondaInput {
 export interface RondaRepository {
   create(input: CreateRondaInput): Promise<Ronda>;
   findByOwner(ownerId: string): Promise<Ronda[]>;
+  findAll(): Promise<Ronda[]>;
+  assign(id: string, assigneeId: string, assigneeName: string): Promise<Ronda | null>;
   findById(id: string): Promise<Ronda | null>;
   saveAnswers(
     id: string,
