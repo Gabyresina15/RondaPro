@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../rondas/presentation/perform_ronda_screen.dart';
 import '../../rondas/presentation/rondas_controller.dart';
@@ -45,7 +46,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
         }
       },
       icon: const Icon(Icons.add),
-      label: const Text('New template'),
+      label: Text(S.of(context).newTemplate),
     );
 
     if (widget.embedded) {
@@ -63,15 +64,15 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Checklist templates'),
+        title: Text(S.of(context).templates),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: S.of(context).refresh,
             onPressed: templates.loading ? null : () => templates.load(),
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: S.of(context).signOut,
             onPressed: () => auth.logout(),
             icon: const Icon(Icons.logout),
           ),
@@ -92,7 +93,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
         return StatefulBuilder(
           builder: (context, setLocal) {
             return AlertDialog(
-              title: const Text('Start ronda'),
+              title: Text(S.of(context).start),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -108,14 +109,13 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
                           )
                           .toList(),
                       onChanged: (value) => setLocal(() => selected = value),
-                      decoration: const InputDecoration(labelText: 'Site'),
+                      decoration: InputDecoration(labelText: S.of(context).site),
                     ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: locationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Extra location note',
-                      hintText: 'Aisle 4 / back office',
+                    decoration: InputDecoration(
+                      labelText: S.of(context).extraLocation,
                     ),
                   ),
                 ],
@@ -123,11 +123,11 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(S.of(context).cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Start'),
+                  child: Text(S.of(context).start),
                 ),
               ],
             );
@@ -150,7 +150,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.read<RondasController>().error ?? 'Could not start ronda',
+            context.read<RondasController>().error ?? 'No se pudo empezar la ronda',
           ),
         ),
       );
@@ -181,7 +181,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => templates.load(),
-                child: const Text('Retry'),
+                child: Text(S.of(context).retry),
               ),
             ],
           ),
@@ -191,7 +191,7 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
     if (templates.items.isEmpty) {
       return Center(
         child: Text(
-          'No templates yet.\nCreate one for ${auth.session?.user.name ?? 'your team'}.',
+          S.of(context).noTemplates,
           textAlign: TextAlign.center,
         ),
       );
@@ -210,8 +210,8 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               title: Text(item.name),
               subtitle: Text(
                 item.description.isEmpty
-                    ? '${item.items.length} item(s) · tap to start ronda'
-                    : '${item.description}\n${item.items.length} item(s) · tap to start ronda',
+                    ? '${item.items.length} ítems · tocá para empezar'
+                    : '${item.description}\n${item.items.length} ítems · tocá para empezar',
               ),
               isThreeLine: item.description.isNotEmpty,
               leading: CircleAvatar(
