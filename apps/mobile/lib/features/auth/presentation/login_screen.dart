@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _passwordController.text,
           );
     if (!ok && mounted) {
-      final message = auth.error ?? 'Authentication failed';
+      final message = auth.error ?? 'No se pudo autenticar';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
@@ -51,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
+    final s = S.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -73,9 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _registerMode
-                          ? 'Create an auditor account'
-                          : 'Sign in to manage checklist templates',
+                      _registerMode ? s.registerSubtitle : s.loginSubtitle,
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
@@ -83,9 +83,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (_registerMode) ...[
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          prefixIcon: Icon(Icons.person_outline),
+                        decoration: InputDecoration(
+                          labelText: s.name,
+                          prefixIcon: const Icon(Icons.person_outline),
                         ),
                         textInputAction: TextInputAction.next,
                         validator: (value) {
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           }
                           if (value == null || value.trim().isEmpty) {
-                            return 'Name is required';
+                            return s.nameRequired;
                           }
                           return null;
                         },
@@ -102,18 +102,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: s.email,
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Email is required';
+                          return s.emailRequired;
                         }
                         if (!value.contains('@')) {
-                          return 'Enter a valid email';
+                          return s.emailInvalid;
                         }
                         return null;
                       },
@@ -121,18 +121,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock_outline),
+                      decoration: InputDecoration(
+                        labelText: s.password,
+                        prefixIcon: const Icon(Icons.lock_outline),
                       ),
                       obscureText: true,
                       onFieldSubmitted: (_) => _submit(),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Password is required';
+                          return s.passwordRequired;
                         }
                         if (_registerMode && value.length < 8) {
-                          return 'Use at least 8 characters';
+                          return s.passwordMin;
                         }
                         return null;
                       },
@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(_registerMode ? 'Register' : 'Sign in'),
+                          : Text(_registerMode ? s.register : s.signIn),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
@@ -157,11 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _registerMode = !_registerMode;
                               });
                             },
-                      child: Text(
-                        _registerMode
-                            ? 'Already have an account? Sign in'
-                            : 'Need an account? Register',
-                      ),
+                      child: Text(_registerMode ? s.haveAccount : s.needAccount),
                     ),
                   ],
                 ),
