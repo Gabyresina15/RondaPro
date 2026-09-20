@@ -40,7 +40,11 @@ export class LoginUser {
       throw new InvalidCredentialsError();
     }
 
-    const token = this.tokens.sign({ sub: user.id, email: user.email });
+    const token = this.tokens.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role ?? 'auditor',
+    });
     return { user: toUserPublic(user), token };
   }
 }

@@ -4,7 +4,13 @@ import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 export class ListRondas {
   constructor(private readonly rondas: RondaRepository) {}
 
-  execute(ownerId: string): Promise<Ronda[]> {
-    return this.rondas.findByOwner(ownerId);
+  execute(
+    actorId: string,
+    role: 'auditor' | 'supervisor' = 'auditor',
+  ): Promise<Ronda[]> {
+    if (role === 'supervisor') {
+      return this.rondas.findAll();
+    }
+    return this.rondas.findByOwner(actorId);
   }
 }

@@ -18,7 +18,7 @@ export class JwtTokenService implements TokenService {
 
   sign(payload: TokenPayload): string {
     return jwt.sign(
-      { email: payload.email },
+      { email: payload.email, role: payload.role },
       this.secret,
       { ...this.signOptions, subject: payload.sub },
     );
@@ -33,6 +33,7 @@ export class JwtTokenService implements TokenService {
     if (!payload.sub || typeof payload.email !== 'string') {
       throw new Error('Invalid token payload');
     }
-    return { sub: payload.sub, email: payload.email };
+    const role = payload.role === 'supervisor' ? 'supervisor' : 'auditor';
+    return { sub: payload.sub, email: payload.email, role };
   }
 }

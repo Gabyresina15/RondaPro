@@ -5,6 +5,7 @@ import type { TokenService } from '../../../domain/ports/TokenService.js';
 export interface AuthUser {
   id: string;
   email: string;
+  role: 'auditor' | 'supervisor';
 }
 
 declare module 'fastify' {
@@ -45,14 +46,16 @@ const authPluginImpl: FastifyPluginAsync<AuthPluginOptions> = async (
       }
       try {
         const payload = opts.tokens.verify(token);
-        request.authUser = { id: payload.sub, email: payload.email };
+        request.authUser = {
+          id: payload.sub,
+          email: payload.email,
+          role: payload.role,
+        };
       } catch {
-        return reply
-          .code(401)
-          .send({
-            error: 'Unauthorized',
-            message: 'Invalid or expired token',
-          });
+        return reply.code(401).send({
+          error: 'Unauthorized',
+          message: 'Invalid or expired token',
+        });
       }
     },
   );
