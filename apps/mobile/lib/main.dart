@@ -9,6 +9,8 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/data/dashboard_repository.dart';
 import 'features/dashboard/presentation/dashboard_controller.dart';
 import 'features/home/presentation/home_shell.dart';
+import 'features/notifications/data/notification_repository.dart';
+import 'features/notifications/presentation/notifications_controller.dart';
 import 'features/rondas/data/ronda_repository.dart';
 import 'features/rondas/presentation/rondas_controller.dart';
 import 'features/sites/data/site_repository.dart';
@@ -32,6 +34,7 @@ class RondaProApp extends StatelessWidget {
     final rondaRepository = RondaRepository(api);
     final siteRepository = SiteRepository(api);
     final dashboardRepository = DashboardRepository(api);
+    final notificationRepository = NotificationRepository(api);
 
     return MultiProvider(
       providers: [
@@ -51,6 +54,9 @@ class RondaProApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DashboardController(dashboardRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationsController(notificationRepository),
         ),
       ],
       child: MaterialApp(

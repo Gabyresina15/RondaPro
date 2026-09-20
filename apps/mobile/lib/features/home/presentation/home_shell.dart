@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../dashboard/presentation/panel_screen.dart';
+import '../../notifications/presentation/notifications_controller.dart';
+import '../../notifications/presentation/notifications_screen.dart';
 import '../../rondas/presentation/history_list_screen.dart';
 import '../../templates/presentation/templates_list_screen.dart';
 
@@ -16,6 +18,14 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationsController>().load();
+    });
+  }
 
   Widget _page(int index) {
     switch (index) {
@@ -34,10 +44,26 @@ class _HomeShellState extends State<HomeShell> {
     final s = S.of(context);
     final titles = [s.templates, s.history, s.panel];
     final role = auth.user?.role ?? 'auditor';
+    final unread = context.watch<NotificationsController>().unreadCount;
     return Scaffold(
       appBar: AppBar(
         title: Text('${titles[_index]} · ${s.roleLabel(role)}'),
         actions: [
+          IconButton(
+            tooltip: 'Notificaciones',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NotificationsScreen(),
+                ),
+              );
+            },
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+          ),
           IconButton(
             tooltip: s.signOut,
             onPressed: auth.logout,
