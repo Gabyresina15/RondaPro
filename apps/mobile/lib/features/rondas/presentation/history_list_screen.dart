@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../sites/presentation/sites_controller.dart';
 import '../data/ronda_repository.dart';
@@ -57,6 +58,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
     final items = _filtered(controller.items);
     final isSupervisor =
         context.watch<AuthController>().user?.isSupervisor ?? false;
+    final s = S.of(context);
 
     return Column(
       children: [
@@ -66,16 +68,16 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
             children: [
               DropdownButtonFormField<String>(
                 value: _status,
-                decoration: const InputDecoration(labelText: 'Status'),
-                items: const [
-                  DropdownMenuItem(value: 'all', child: Text('All')),
+                decoration: InputDecoration(labelText: s.status),
+                items: [
+                  DropdownMenuItem(value: 'all', child: Text(s.all)),
                   DropdownMenuItem(
                     value: 'in_progress',
-                    child: Text('In progress'),
+                    child: Text(s.inProgress),
                   ),
                   DropdownMenuItem(
                     value: 'completed',
-                    child: Text('Completed'),
+                    child: Text(s.completed),
                   ),
                 ],
                 onChanged: (value) => setState(() => _status = value ?? 'all'),
@@ -83,11 +85,11 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
               const SizedBox(height: 8),
               DropdownButtonFormField<String?>(
                 value: _siteId,
-                decoration: const InputDecoration(labelText: 'Site'),
+                decoration: InputDecoration(labelText: s.site),
                 items: [
-                  const DropdownMenuItem<String?>(
+                  DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('All sites'),
+                    child: Text(s.allSites),
                   ),
                   ...sites.map(
                     (site) => DropdownMenuItem<String?>(
@@ -100,7 +102,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
               ),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Only open findings'),
+                title: Text(s.openFindingsOnly),
                 value: _openFindingsOnly,
                 onChanged: (value) =>
                     setState(() => _openFindingsOnly = value ?? false),
@@ -108,7 +110,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
             ],
           ),
         ),
-        Expanded(child: _list(controller, items, isSupervisor)),
+        Expanded(child: _list(controller, items, isSupervisor, s)),
       ],
     );
   }
@@ -117,6 +119,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
     RondasController controller,
     List<Ronda> items,
     bool isSupervisor,
+    S s,
   ) {
     if (controller.loading && controller.items.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -132,7 +135,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: controller.loadHistory,
-                child: const Text('Retry'),
+                child: Text(s.retry),
               ),
             ],
           ),
@@ -140,7 +143,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
       );
     }
     if (items.isEmpty) {
-      return const Center(child: Text('No rondas match these filters.'));
+      return Center(child: Text(s.noRondas));
     }
 
     return RefreshIndicator(
@@ -160,10 +163,12 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
               subtitle: Text(
                 [
                   item.siteName ??
-                      (item.location.isEmpty ? 'No location' : item.location),
-                  item.isCompleted ? 'Completed' : 'In progress',
-                  '${item.photos.length} photos',
-                  '${item.findings.where((f) => f.isOpen).length} open findings',
+                      (item.location.isEmpty ? s.noLocation : item.location),
+                  item.isCompleted ? s.completed : s.inProgress,
+                  s.photosCount(item.photos.length),
+                  s.openFindingsCount(
+                    item.findings.where((f) => f.isOpen).length,
+                  ),
                 ].join(' · '),
               ),
               trailing: Row(
@@ -171,7 +176,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                 children: [
                   if (isSupervisor)
                     IconButton(
-                      tooltip: 'Asignar',
+                      tooltip: s.assign,
                       icon: const Icon(Icons.person_add_alt_1_outlined),
                       onPressed: () => showAssignRondaSheet(
                         context: context,
@@ -180,7 +185,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                     ),
                   if (item.isCompleted)
                     IconButton(
-                      tooltip: 'Export PDF',
+                      tooltip: s.exportPdf,
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       onPressed: () async {
                         try {
@@ -199,7 +204,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                         } catch (e) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Could not export PDF: $e')),
+                            SnackBar(content: Text('${s.exportPdf}: $e')),
                           );
                         }
                       },
