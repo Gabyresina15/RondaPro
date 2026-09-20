@@ -9,9 +9,9 @@ import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
 
 const _demoPngA =
-    'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mNk+M9Qz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
+    'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeklEQVR4nO3PUQkAIBTAwJfEYOY0oCH8OITBAtxm7fN1wwUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWPHYBUmfBD31AguIAAAAASUVORK5CYII=';
 const _demoPngB =
-    'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FAAhKDveksnX9AAAAAElFTkSuQmCC';
+    'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeklEQVR4nO3PUQkAIBTAwBfHOMY2liH8OITBAtxm7PV1wwUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWPHYBd/oBLbmWUAcAAAAASUVORK5CYII=';
 
 class PerformRondaScreen extends StatefulWidget {
   const PerformRondaScreen({super.key, required this.ronda});
@@ -42,7 +42,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
 
   Future<void> _pickPhoto({required int itemIndex}) async {
     final file = await _picker.pickImage(
-      source: ImageSource.gallery,
+      source: ImageSource.camera,
       imageQuality: 70,
       maxWidth: 1600,
     );
@@ -58,7 +58,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
     final ok = await context.read<RondasController>().addPhotos([
       {
         'filename': file.name,
-        'mimeType': mime == 'image/webp' ? 'image/webp' : mime,
+        'mimeType': mime == 'image/webp' ? 'image/jpeg' : mime,
         'dataBase64': base64Encode(bytes),
         'itemIndex': itemIndex,
       },
@@ -328,7 +328,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                     ? null
                     : () => _pickPhoto(itemIndex: answer.itemIndex),
                 icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('Attach photo'),
+                label: const Text('Take photo (emulator camera)'),
               ),
             ],
             if (answer.type != 'photo') ...[
@@ -338,7 +338,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                     ? null
                     : () => _pickPhoto(itemIndex: answer.itemIndex),
                 icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('Attach extra photo'),
+                label: const Text('Take extra photo'),
               ),
             ],
           ],
