@@ -41,6 +41,7 @@ import {
 } from './adapters/llm/OpenAiSummaryGenerator.js';
 import { authPlugin } from './adapters/http/plugins/authPlugin.js';
 import { containerPlugin } from './adapters/http/plugins/containerPlugin.js';
+import { assignRoutes } from './adapters/http/routes/assignRoutes.js';
 import { authRoutes } from './adapters/http/routes/authRoutes.js';
 import { dashboardRoutes } from './adapters/http/routes/dashboardRoutes.js';
 import { healthRoutes } from './adapters/http/routes/healthRoutes.js';
@@ -135,6 +136,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(authRoutes);
   await app.register(templateRoutes);
   await app.register(rondaRoutes);
+  await app.register(assignRoutes);
   await app.register(siteRoutes);
   await app.register(dashboardRoutes);
 
