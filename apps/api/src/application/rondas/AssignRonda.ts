@@ -1,5 +1,6 @@
 import type { UserRepository } from '../../domain/ports/UserRepository.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
+import type { NotificationRepository } from '../../domain/ports/NotificationRepository.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 export class ForbiddenError extends Error {
@@ -13,6 +14,7 @@ export class AssignRonda {
   constructor(
     private readonly rondas: RondaRepository,
     private readonly users: UserRepository,
+    private readonly notifications: NotificationRepository,
   ) {}
 
   async execute(input: {
@@ -40,6 +42,13 @@ export class AssignRonda {
     if (!updated) {
       throw new RondaNotFoundError(input.rondaId);
     }
+    const place = updated.siteName || updated.location || 'el sitio';
+    await this.notifications.create({
+      userId: assignee.id,
+      rondaId: updated.id,
+      title: 'Nueva ronda asignada',
+      body: `El supervisor te pidió inspeccionar ${place} (${updated.templateName}).`,
+    });
     return updated;
   }
 }
