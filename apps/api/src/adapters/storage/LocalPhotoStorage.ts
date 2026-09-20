@@ -5,6 +5,24 @@ import type { PhotoStorage, StoredPhoto } from '../../domain/ports/PhotoStorage.
 export class LocalPhotoStorage implements PhotoStorage {
   constructor(private readonly rootDir: string) {}
 
+  private root(): string {
+    return path.resolve(this.rootDir);
+  }
+
+  private resolveSafe(relativePath: string): string {
+    const normalized = path
+      .normalize(relativePath.replace(/\\/g, '/'))
+      .replace(/^(\.\.(\/|\\|$))+/, '');
+    const absolute = path.resolve(this.root(), normalized);
+    const root = this.root();
+    const absCmp = process.platform === 'win32' ? absolute.toLowerCase() : absolute;
+    const rootCmp = process.platform === 'win32' ? root.toLowerCase() : root;
+    if (absCmp !== rootCmp && !absCmp.startsWith(`${rootCmp}${path.sep}`)) {
+      throw new Error('Invalid photo path');
+    }
+    return absolute;
+  }
+
   async save(input: {
     ownerId: string;
     rondaId: string;
@@ -19,21 +37,14 @@ export class LocalPhotoStorage implements PhotoStorage {
       input.rondaId,
       `${input.photoId}${ext}`,
     );
-    const absolute = path.join(this.rootDir, relativePath);
+    const absolute = this.resolveSafe(relativePath);
     await mkdir(path.dirname(absolute), { recursive: true });
     await writeFile(absolute, input.bytes);
     return { relativePath };
   }
 
   async read(relativePath: string): Promise<Buffer> {
-    const normalized = path
-      .normalize(relativePath)
-      .replace(/^(\.\.(\/|\\|$))+/, '');
-    const absolute = path.join(this.rootDir, normalized);
-    if (!absolute.startsWith(path.resolve(this.rootDir))) {
-      throw new Error('Invalid photo path');
-    }
-    return readFile(absolute);
+    return readFile(this.resolveSafe(relativePath));
   }
 }
 
