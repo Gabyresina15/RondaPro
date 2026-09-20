@@ -248,11 +248,19 @@ class _RemotePhoto extends StatelessWidget {
                   ),
           );
         }
+        final bytes = Uint8List.fromList(snapshot.data ?? const []);
         return Image.memory(
-          Uint8List.fromList(snapshot.data ?? const []),
+          bytes,
           width: 96,
           height: 96,
           fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: 96,
+            height: 96,
+            alignment: Alignment.center,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Icon(Icons.broken_image_outlined),
+          ),
         );
       },
     );
