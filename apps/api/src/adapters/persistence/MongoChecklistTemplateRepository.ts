@@ -45,6 +45,13 @@ export class MongoChecklistTemplateRepository
     return docs.map((d) => toDomain(d as ChecklistTemplateDocument));
   }
 
+  async findAll(): Promise<ChecklistTemplate[]> {
+    const docs = await ChecklistTemplateModel.find({})
+      .sort({ updatedAt: -1 })
+      .exec();
+    return docs.map((d) => toDomain(d as ChecklistTemplateDocument));
+  }
+
   async findById(id: string): Promise<ChecklistTemplate | null> {
     const doc = await ChecklistTemplateModel.findById(id).exec();
     return doc ? toDomain(doc as ChecklistTemplateDocument) : null;

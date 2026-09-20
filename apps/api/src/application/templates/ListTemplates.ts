@@ -4,7 +4,7 @@ import type { ChecklistTemplateRepository } from '../../domain/ports/ChecklistTe
 export class ListTemplates {
   constructor(private readonly templates: ChecklistTemplateRepository) {}
 
-  async execute(ownerId: string): Promise<ChecklistTemplate[]> {
-    return this.templates.findByOwner(ownerId);
+  async execute(_ownerId: string): Promise<ChecklistTemplate[]> {
+    return this.templates.findAll();
   }
 }

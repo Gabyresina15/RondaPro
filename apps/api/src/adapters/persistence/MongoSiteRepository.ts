@@ -29,6 +29,11 @@ export class MongoSiteRepository implements SiteRepository {
     return docs.map((d) => toDomain(d as SiteDocument));
   }
 
+  async findAll(): Promise<Site[]> {
+    const docs = await SiteModel.find({}).sort({ name: 1 }).exec();
+    return docs.map((d) => toDomain(d as SiteDocument));
+  }
+
   async findById(id: string): Promise<Site | null> {
     const doc = await SiteModel.findById(id).exec();
     return doc ? toDomain(doc as SiteDocument) : null;

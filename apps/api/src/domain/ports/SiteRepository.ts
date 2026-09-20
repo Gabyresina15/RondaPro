@@ -16,6 +16,7 @@ export interface UpdateSiteInput {
 export interface SiteRepository {
   create(input: CreateSiteInput): Promise<Site>;
   findByOwner(ownerId: string): Promise<Site[]>;
+  findAll(): Promise<Site[]>;
   findById(id: string): Promise<Site | null>;
   update(id: string, ownerId: string, input: UpdateSiteInput): Promise<Site | null>;
   delete(id: string, ownerId: string): Promise<boolean>;

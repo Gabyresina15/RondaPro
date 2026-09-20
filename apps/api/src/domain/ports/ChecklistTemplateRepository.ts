@@ -19,6 +19,7 @@ export interface UpdateTemplateInput {
 export interface ChecklistTemplateRepository {
   create(input: CreateTemplateInput): Promise<ChecklistTemplate>;
   findByOwner(ownerId: string): Promise<ChecklistTemplate[]>;
+  findAll(): Promise<ChecklistTemplate[]>;
   findById(id: string): Promise<ChecklistTemplate | null>;
   update(
     id: string,
