@@ -12,6 +12,12 @@ const userSchema = new Schema(
     },
     passwordHash: { type: String, required: true },
     name: { type: String, required: true, trim: true },
+    role: {
+      type: String,
+      required: true,
+      enum: ['auditor', 'supervisor'],
+      default: 'auditor',
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

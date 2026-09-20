@@ -11,6 +11,7 @@ function toDomain(doc: UserDocument): User {
     email: doc.email,
     passwordHash: doc.passwordHash,
     name: doc.name,
+    role: (doc as UserDocument & { role?: 'auditor' | 'supervisor' }).role ?? 'auditor',
     createdAt: doc.createdAt,
   };
 }
@@ -21,6 +22,7 @@ export class MongoUserRepository implements UserRepository {
       email: input.email,
       passwordHash: input.passwordHash,
       name: input.name,
+      role: input.role ?? 'auditor',
     });
     return toDomain(doc as UserDocument);
   }
@@ -33,5 +35,10 @@ export class MongoUserRepository implements UserRepository {
   async findById(id: string): Promise<User | null> {
     const doc = await UserModel.findById(id).exec();
     return doc ? toDomain(doc as UserDocument) : null;
+  }
+
+  async listAll(): Promise<User[]> {
+    const docs = await UserModel.find({}).sort({ name: 1 }).exec();
+    return docs.map((doc) => toDomain(doc as UserDocument));
   }
 }

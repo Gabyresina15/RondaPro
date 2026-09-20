@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../dashboard/presentation/panel_screen.dart';
 import '../../rondas/presentation/history_list_screen.dart';
@@ -16,8 +17,6 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  static const _titles = ['Templates', 'Historial', 'Panel'];
-
   Widget _page(int index) {
     switch (index) {
       case 1:
@@ -32,12 +31,15 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
+    final s = S.of(context);
+    final titles = [s.templates, s.history, s.panel];
+    final role = auth.user?.role ?? 'auditor';
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_index]),
+        title: Text('${titles[_index]} · ${s.roleLabel(role)}'),
         actions: [
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: s.signOut,
             onPressed: auth.logout,
             icon: const Icon(Icons.logout),
           ),
@@ -52,21 +54,21 @@ class _HomeShellState extends State<HomeShell> {
           }
           setState(() => _index = value);
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
-            label: 'Templates',
+            icon: const Icon(Icons.checklist_outlined),
+            selectedIcon: const Icon(Icons.checklist),
+            label: s.templates,
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'Historial',
+            icon: const Icon(Icons.history_outlined),
+            selectedIcon: const Icon(Icons.history),
+            label: s.history,
           ),
           NavigationDestination(
-            icon: Icon(Icons.space_dashboard_outlined),
-            selectedIcon: Icon(Icons.space_dashboard),
-            label: 'Panel',
+            icon: const Icon(Icons.space_dashboard_outlined),
+            selectedIcon: const Icon(Icons.space_dashboard),
+            label: s.panel,
           ),
         ],
       ),
