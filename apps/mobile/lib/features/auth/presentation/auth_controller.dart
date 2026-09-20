@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/auth_repository.dart';
 import '../domain/auth_session.dart';
+import '../domain/user.dart';
 
 class AuthController extends ChangeNotifier {
   AuthController(this._repository);
@@ -13,6 +14,7 @@ class AuthController extends ChangeNotifier {
   String? _error;
 
   AuthSession? get session => _session;
+  User? get user => _session?.user;
   bool get isAuthenticated => _session != null;
   bool get busy => _busy;
   String? get error => _error;
