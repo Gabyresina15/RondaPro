@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../rondas/domain/ronda.dart';
 import '../../rondas/presentation/ronda_detail_screen.dart';
 import '../../rondas/presentation/rondas_controller.dart';
@@ -44,24 +45,24 @@ class _PanelScreenState extends State<PanelScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('New site'),
+          title: Text(S.of(context).newSite),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: name,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: InputDecoration(labelText: S.of(context).name),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: address,
-                  decoration: const InputDecoration(labelText: 'Address'),
+                  decoration: InputDecoration(labelText: S.of(context).address),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: notes,
-                  decoration: const InputDecoration(labelText: 'Notes'),
+                  decoration: InputDecoration(labelText: S.of(context).notes),
                 ),
               ],
             ),
@@ -69,11 +70,11 @@ class _PanelScreenState extends State<PanelScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(S.of(context).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Create'),
+              child: Text(S.of(context).create),
             ),
           ],
         );
@@ -112,7 +113,7 @@ class _PanelScreenState extends State<PanelScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          Text('Dashboard', style: Theme.of(context).textTheme.titleLarge),
+          Text(S.of(context).dashboard, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           if (dashboard.loading && stats == null)
             const Padding(
@@ -124,36 +125,36 @@ class _PanelScreenState extends State<PanelScreen> {
               ),
             )
           else if (dashboard.error != null && stats == null)
-            Text(dashboard.error ?? 'Could not load dashboard')
+            Text(dashboard.error ?? 'No se pudo cargar el panel')
           else if (stats != null)
             Column(
               children: [
-                _StatTile(label: 'Sites', value: '${stats.sitesCount}'),
-                _StatTile(label: 'Templates', value: '${stats.templatesCount}'),
+                _StatTile(label: S.of(context).sites, value: '${stats.sitesCount}'),
+                _StatTile(label: S.of(context).templates, value: '${stats.templatesCount}'),
                 _StatTile(
-                  label: 'In progress',
+                  label: S.of(context).inProgress,
                   value: '${stats.rondasInProgress}',
                 ),
                 _StatTile(
-                  label: 'Completed',
+                  label: S.of(context).completed,
                   value: '${stats.rondasCompleted}',
                 ),
-                _StatTile(label: 'Photos', value: '${stats.photosTotal}'),
+                _StatTile(label: S.of(context).photos, value: '${stats.photosTotal}'),
                 _StatTile(
-                  label: 'Open findings',
+                  label: S.of(context).openFindings,
                   value: '${stats.findingsOpen}',
                 ),
                 _StatTile(
-                  label: 'High severity',
+                  label: S.of(context).highSeverity,
                   value: '${stats.findingsHigh}',
                 ),
               ],
             ),
           const SizedBox(height: 24),
-          Text('Open findings', style: Theme.of(context).textTheme.titleLarge),
+          Text(S.of(context).openFindings, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           if (openFindings.isEmpty)
-            const Text('No open findings.')
+            Text(S.of(context).noOpenFindings)
           else
             ...openFindings.map(
               (entry) => Card(
@@ -179,15 +180,15 @@ class _PanelScreenState extends State<PanelScreen> {
           const SizedBox(height: 24),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text('Sites', style: Theme.of(context).textTheme.titleLarge),
+            title: Text(S.of(context).sites, style: Theme.of(context).textTheme.titleLarge),
             trailing: IconButton(
-              tooltip: 'Add site',
+              tooltip: S.of(context).newSite,
               onPressed: _createSite,
               icon: const Icon(Icons.add),
             ),
           ),
           if (sites.items.isEmpty)
-            const Text('No sites yet. Add a store or facility.')
+            const Text('Todavía no hay sitios. Agregá un local.')
           else
             ...sites.items.map(
               (site) => Card(
