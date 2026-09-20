@@ -65,6 +65,13 @@ const rondaSchema = new Schema(
       required: true,
       index: true,
     },
+    assigneeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
+      index: true,
+    },
+    assigneeName: { type: String, required: false, trim: true },
     siteId: {
       type: Schema.Types.ObjectId,
       ref: 'Site',
