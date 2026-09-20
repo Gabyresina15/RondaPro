@@ -1,8 +1,10 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { ListUsers } from './application/auth/ListUsers.js';
 import { LoginUser } from './application/auth/LoginUser.js';
 import { RegisterUser } from './application/auth/RegisterUser.js';
 import { GetDashboard } from './application/dashboard/GetDashboard.js';
+import { AssignRonda } from './application/rondas/AssignRonda.js';
 import { AddFinding } from './application/rondas/AddFinding.js';
 import { AddRondaPhotos } from './application/rondas/AddRondaPhotos.js';
 import { CompleteRonda } from './application/rondas/CompleteRonda.js';
@@ -87,10 +89,18 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   const hasher = new BcryptPasswordHasher();
   const tokens = new JwtTokenService(config.JWT_SECRET, config.JWT_EXPIRES_IN);
   const summaries = buildSummaryGenerator(config);
+  console.log(
+    config.GEMINI_API_KEY
+      ? `Summary provider: Gemini (${config.GEMINI_MODEL})`
+      : config.OPENAI_API_KEY
+        ? `Summary provider: OpenAI (${config.OPENAI_MODEL})`
+        : 'Summary provider: heuristic (no GEMINI_API_KEY / OPENAI_API_KEY)',
+  );
 
   const container = {
     registerUser: new RegisterUser(users, hasher, tokens),
     loginUser: new LoginUser(users, hasher, tokens),
+    listUsers: new ListUsers(users),
     createTemplate: new CreateTemplate(templates),
     listTemplates: new ListTemplates(templates),
     getTemplate: new GetTemplate(templates),
@@ -107,6 +117,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     addFinding: new AddFinding(rondas),
     resolveFinding: new ResolveFinding(rondas),
     updateFinding: new UpdateFinding(rondas),
+    assignRonda: new AssignRonda(rondas, users),
     createSite: new CreateSite(sites),
     listSites: new ListSites(sites),
     getSite: new GetSite(sites),

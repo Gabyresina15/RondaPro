@@ -1,8 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
+import type { ListUsers } from '../../../application/auth/ListUsers.js';
 import type { LoginUser } from '../../../application/auth/LoginUser.js';
 import type { RegisterUser } from '../../../application/auth/RegisterUser.js';
 import type { GetDashboard } from '../../../application/dashboard/GetDashboard.js';
+import type { AssignRonda } from '../../../application/rondas/AssignRonda.js';
 import type { AddFinding } from '../../../application/rondas/AddFinding.js';
 import type { AddRondaPhotos } from '../../../application/rondas/AddRondaPhotos.js';
 import type { CompleteRonda } from '../../../application/rondas/CompleteRonda.js';
@@ -28,6 +30,7 @@ import type { UpdateTemplate } from '../../../application/templates/UpdateTempla
 export interface AppContainer {
   registerUser: RegisterUser;
   loginUser: LoginUser;
+  listUsers: ListUsers;
   createTemplate: CreateTemplate;
   listTemplates: ListTemplates;
   getTemplate: GetTemplate;
@@ -44,6 +47,7 @@ export interface AppContainer {
   addFinding: AddFinding;
   resolveFinding: ResolveFinding;
   updateFinding: UpdateFinding;
+  assignRonda: AssignRonda;
   createSite: CreateSite;
   listSites: ListSites;
   getSite: GetSite;
