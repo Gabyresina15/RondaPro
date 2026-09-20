@@ -1,5 +1,7 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { ListNotifications } from './application/notifications/ListNotifications.js';
+import { MarkNotificationRead } from './application/notifications/MarkNotificationRead.js';
 import { ListUsers } from './application/auth/ListUsers.js';
 import { LoginUser } from './application/auth/LoginUser.js';
 import { RegisterUser } from './application/auth/RegisterUser.js';
@@ -29,6 +31,7 @@ import { UpdateTemplate } from './application/templates/UpdateTemplate.js';
 import { MongoChecklistTemplateRepository } from './adapters/persistence/MongoChecklistTemplateRepository.js';
 import { MongoRondaRepository } from './adapters/persistence/MongoRondaRepository.js';
 import { MongoSiteRepository } from './adapters/persistence/MongoSiteRepository.js';
+import { MongoNotificationRepository } from './adapters/persistence/MongoNotificationRepository.js';
 import { MongoUserRepository } from './adapters/persistence/MongoUserRepository.js';
 import { BcryptPasswordHasher } from './adapters/security/BcryptPasswordHasher.js';
 import { JwtTokenService } from './adapters/security/JwtTokenService.js';
@@ -41,6 +44,7 @@ import {
 } from './adapters/llm/OpenAiSummaryGenerator.js';
 import { authPlugin } from './adapters/http/plugins/authPlugin.js';
 import { containerPlugin } from './adapters/http/plugins/containerPlugin.js';
+import { notificationRoutes } from './adapters/http/routes/notificationRoutes.js';
 import { assignRoutes } from './adapters/http/routes/assignRoutes.js';
 import { authRoutes } from './adapters/http/routes/authRoutes.js';
 import { dashboardRoutes } from './adapters/http/routes/dashboardRoutes.js';
@@ -83,6 +87,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   });
 
   const users = new MongoUserRepository();
+  const notifications = new MongoNotificationRepository();
   const templates = new MongoChecklistTemplateRepository();
   const rondas = new MongoRondaRepository();
   const sites = new MongoSiteRepository();
@@ -118,7 +123,9 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     addFinding: new AddFinding(rondas),
     resolveFinding: new ResolveFinding(rondas),
     updateFinding: new UpdateFinding(rondas),
-    assignRonda: new AssignRonda(rondas, users),
+    assignRonda: new AssignRonda(rondas, users, notifications),
+    listNotifications: new ListNotifications(notifications),
+    markNotificationRead: new MarkNotificationRead(notifications),
     createSite: new CreateSite(sites),
     listSites: new ListSites(sites),
     getSite: new GetSite(sites),
@@ -138,6 +145,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(rondaRoutes);
   await app.register(assignRoutes);
   await app.register(siteRoutes);
+  await app.register(notificationRoutes);
   await app.register(dashboardRoutes);
 
   return app;
