@@ -11,9 +11,12 @@ export class RondaNotFoundError extends Error {
 export class GetRonda {
   constructor(private readonly rondas: RondaRepository) {}
 
-  async execute(id: string, ownerId: string): Promise<Ronda> {
+  async execute(id: string, actorId: string): Promise<Ronda> {
     const ronda = await this.rondas.findById(id);
-    if (!ronda || ronda.ownerId !== ownerId) {
+    const canSee =
+      ronda &&
+      (ronda.ownerId === actorId || ronda.assigneeId === actorId);
+    if (!canSee) {
       throw new RondaNotFoundError(id);
     }
     return ronda;
