@@ -34,4 +34,11 @@ class NotificationsController extends ChangeNotifier {
       notifyListeners();
     } catch (_) {}
   }
+
+  Future<void> markAllRead() async {
+    final unread = _items.where((n) => n.isUnread).toList();
+    for (final item in unread) {
+      await markRead(item.id);
+    }
+  }
 }
