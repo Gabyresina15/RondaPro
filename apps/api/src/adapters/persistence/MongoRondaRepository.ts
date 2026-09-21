@@ -11,6 +11,14 @@ import type {
 } from '../../domain/ports/RondaRepository.js';
 import { RondaModel, type RondaDocument } from './RondaModel.js';
 
+function actorFilter(id: string, ownerId: string, extra: Record<string, unknown> = {}) {
+  return {
+    _id: id,
+    $or: [{ ownerId }, { assigneeId: ownerId }],
+    ...extra,
+  };
+}
+
 function toDomain(doc: RondaDocument): Ronda {
   return {
     id: doc._id.toHexString(),
@@ -116,7 +124,7 @@ export class MongoRondaRepository implements RondaRepository {
     answers: RondaAnswer[],
   ): Promise<Ronda | null> {
     const doc = await RondaModel.findOneAndUpdate(
-      { _id: id, ownerId, status: 'in_progress' },
+      actorFilter(id, ownerId, { status: 'in_progress' }),
       { $set: { answers } },
       { new: true },
     ).exec();
@@ -129,7 +137,7 @@ export class MongoRondaRepository implements RondaRepository {
     photos: RondaPhoto[],
   ): Promise<Ronda | null> {
     const doc = await RondaModel.findOneAndUpdate(
-      { _id: id, ownerId, status: 'in_progress' },
+      actorFilter(id, ownerId, { status: 'in_progress' }),
       { $push: { photos: { $each: photos } } },
       { new: true },
     ).exec();
@@ -142,7 +150,7 @@ export class MongoRondaRepository implements RondaRepository {
     finding: Finding,
   ): Promise<Ronda | null> {
     const doc = await RondaModel.findOneAndUpdate(
-      { _id: id, ownerId, status: 'in_progress' },
+      actorFilter(id, ownerId, { status: 'in_progress' }),
       { $push: { findings: finding } },
       { new: true },
     ).exec();
@@ -175,7 +183,7 @@ export class MongoRondaRepository implements RondaRepository {
     if ('resolvedAt' in patch) set['findings.$.resolvedAt'] = patch.resolvedAt ?? null;
     if ('resolvedBy' in patch) set['findings.$.resolvedBy'] = patch.resolvedBy ?? '';
     const doc = await RondaModel.findOneAndUpdate(
-      { _id: id, ownerId, 'findings.id': findingId },
+      actorFilter(id, ownerId, { 'findings.id': findingId }),
       { $set: set },
       { new: true },
     ).exec();
@@ -197,7 +205,7 @@ export class MongoRondaRepository implements RondaRepository {
       set.findings = input.findings;
     }
     const doc = await RondaModel.findOneAndUpdate(
-      { _id: id, ownerId, status: 'in_progress' },
+      actorFilter(id, ownerId, { status: 'in_progress' }),
       { $set: set },
       { new: true },
     ).exec();
