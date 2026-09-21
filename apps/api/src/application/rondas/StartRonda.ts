@@ -19,23 +19,20 @@ export class StartRonda {
     siteId?: string;
   }): Promise<Ronda> {
     const template = await this.templates.findById(input.templateId);
-    if (!template || template.ownerId !== input.ownerId) {
+    if (!template) {
       throw new TemplateNotFoundError(input.templateId);
     }
 
     let siteName: string | undefined;
     if (input.siteId) {
       const site = await this.sites.findById(input.siteId);
-      if (!site || site.ownerId !== input.ownerId) {
+      if (!site) {
         throw new SiteNotFoundError(input.siteId);
       }
       siteName = site.name;
     }
 
-    const location =
-      input.location.trim() ||
-      siteName ||
-      '';
+    const location = input.location.trim() || siteName || '';
 
     return this.rondas.create({
       templateId: template.id,
