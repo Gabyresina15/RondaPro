@@ -3,6 +3,7 @@ import type { Ronda } from '../../domain/entities/Ronda.js';
 import type { PhotoStorage } from '../../domain/ports/PhotoStorage.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 import { RondaAlreadyCompletedError } from './SaveRondaAnswers.js';
+import { canActOnRonda } from './canActOnRonda.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 export class InvalidPhotoError extends Error {
@@ -34,27 +35,27 @@ export class AddRondaPhotos {
     incoming: IncomingPhoto[],
   ): Promise<Ronda> {
     const existing = await this.rondas.findById(id);
-    if (!existing || existing.ownerId !== ownerId) {
+    if (!canActOnRonda(existing, ownerId)) {
       throw new RondaNotFoundError(id);
     }
     if (existing.status === 'completed') {
       throw new RondaAlreadyCompletedError(id);
     }
     if (incoming.length === 0) {
-      throw new InvalidPhotoError('At least one photo is required');
+      throw new InvalidPhotoError('Se necesita al menos una foto');
     }
 
     const stored = [];
     for (const photo of incoming) {
       if (!ALLOWED_MIME.has(photo.mimeType)) {
         throw new InvalidPhotoError(
-          `Unsupported mime type: ${photo.mimeType}`,
+          `Tipo de imagen no soportado: ${photo.mimeType}`,
         );
       }
       const bytes = decodeBase64(photo.dataBase64);
       if (bytes.length === 0 || bytes.length > MAX_BYTES) {
         throw new InvalidPhotoError(
-          `Photo ${photo.filename} must be between 1 byte and 4MB`,
+          `La foto ${photo.filename} debe pesar entre 1 byte y 4MB`,
         );
       }
       const photoId = randomUUID();
@@ -89,6 +90,6 @@ function decodeBase64(value: string): Buffer {
   try {
     return Buffer.from(cleaned, 'base64');
   } catch {
-    throw new InvalidPhotoError('Invalid base64 photo payload');
+    throw new InvalidPhotoError('La foto en base64 no es válida');
   }
 }

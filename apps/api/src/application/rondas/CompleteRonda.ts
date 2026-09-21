@@ -4,6 +4,7 @@ import type { Finding, Ronda } from '../../domain/entities/Ronda.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 import type { SummaryGenerator } from '../../domain/ports/SummaryGenerator.js';
 import { RondaAlreadyCompletedError } from './SaveRondaAnswers.js';
+import { canActOnRonda } from './canActOnRonda.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 export class RondaCompletionError extends Error {
@@ -22,7 +23,7 @@ export class CompleteRonda {
 
   async execute(id: string, ownerId: string): Promise<Ronda> {
     const ronda = await this.rondas.findById(id);
-    if (!ronda || ronda.ownerId !== ownerId) {
+    if (!canActOnRonda(ronda, ownerId)) {
       throw new RondaNotFoundError(id);
     }
     if (ronda.status === 'completed') {
@@ -30,7 +31,7 @@ export class CompleteRonda {
     }
     if (ronda.photos.length < 2) {
       throw new RondaCompletionError(
-        'A ronda needs at least 2 photos before it can be completed',
+        'La ronda necesita al menos 2 fotos para completarse',
       );
     }
 
@@ -41,19 +42,19 @@ export class CompleteRonda {
         const answer = ronda.answers.find((a) => a.itemIndex === index);
         if (item.type === 'bool' && answer?.boolValue === undefined) {
           throw new RondaCompletionError(
-            `Required check is missing: ${item.label}`,
+            `Falta el check obligatorio: ${item.label}`,
           );
         }
         if (item.type === 'text' && !(answer?.textValue ?? '').trim()) {
           throw new RondaCompletionError(
-            `Required note is missing: ${item.label}`,
+            `Falta la nota obligatoria: ${item.label}`,
           );
         }
         if (item.type === 'photo') {
           const count = ronda.photos.filter((p) => p.itemIndex === index).length;
           if (count < 1) {
             throw new RondaCompletionError(
-              `Required photo is missing: ${item.label}`,
+              `Falta la foto obligatoria: ${item.label}`,
             );
           }
         }
@@ -90,8 +91,8 @@ function mergeAutoFindings(ronda: Ronda): Finding[] {
     }
     findings.push({
       id: randomUUID(),
-      title: `Failed check: ${answer.label}`,
-      notes: 'Automatically created from a failed boolean item',
+      title: `Check fallido: ${answer.label}`,
+      notes: 'Creado automáticamente por un ítem que no pasó',
       severity: 'medium',
       status: 'open',
       itemIndex: answer.itemIndex,
