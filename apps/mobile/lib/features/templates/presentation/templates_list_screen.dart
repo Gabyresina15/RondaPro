@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../rondas/presentation/create_order_sheet.dart';
 import '../../rondas/presentation/perform_ronda_screen.dart';
 import '../../rondas/presentation/rondas_controller.dart';
 import '../../sites/domain/site.dart';
@@ -217,6 +218,16 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               leading: CircleAvatar(
                 child: Text('${item.items.length}'),
               ),
+              trailing: auth.user?.isSupervisor == true
+                  ? IconButton(
+                      tooltip: 'Ordenar inspección',
+                      icon: const Icon(Icons.assignment_ind_outlined),
+                      onPressed: () => showCreateOrderSheet(
+                        context: context,
+                        templateId: item.id,
+                      ),
+                    )
+                  : null,
               onTap: () => _startRonda(context, item.id),
             ),
           );
