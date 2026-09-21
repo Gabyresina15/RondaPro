@@ -32,6 +32,25 @@ class RondaRepository {
     return Ronda.fromJson(json);
   }
 
+  Future<Ronda> createOrder({
+    required String templateId,
+    required String assigneeId,
+    required String location,
+    String? siteId,
+  }) async {
+    final json = await _api.postJson(
+      '/rondas/orders',
+      {
+        'templateId': templateId,
+        'assigneeId': assigneeId,
+        'location': location,
+        if (siteId != null) 'siteId': siteId,
+      },
+      auth: true,
+    );
+    return Ronda.fromJson(json);
+  }
+
   Future<Ronda> start({
     required String templateId,
     required String location,
