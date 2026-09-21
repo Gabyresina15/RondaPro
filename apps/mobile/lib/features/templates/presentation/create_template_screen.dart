@@ -29,7 +29,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
   final _descriptionController = TextEditingController();
   final List<_DraftItem> _items = [
     _DraftItem(
-      label: 'Floor clear of hazards',
+      label: 'Piso libre de riesgos',
       required: true,
       type: ChecklistItemType.boolType,
     ),
@@ -71,7 +71,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(controller.error ?? 'Failed to create template')),
+        SnackBar(content: Text(controller.error ?? 'No se pudo crear la plantilla')),
       );
     }
   }
@@ -92,7 +92,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New template'),
+        title: const Text('Nueva plantilla'),
       ),
       body: Form(
         key: _formKey,
@@ -101,10 +101,10 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: const InputDecoration(labelText: 'Nombre'),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Name is required';
+                  return 'El nombre es obligatorio';
                 }
                 return null;
               },
@@ -112,21 +112,21 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: const InputDecoration(labelText: 'Descripción'),
               maxLines: 2,
             ),
             const SizedBox(height: 24),
             Row(
               children: [
                 Text(
-                  'Items',
+                  'Ítems',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: _addItem,
                   icon: const Icon(Icons.add),
-                  label: const Text('Add item'),
+                  label: const Text('Agregar ítem'),
                 ),
               ],
             ),
@@ -141,11 +141,11 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
                     children: [
                       TextFormField(
                         initialValue: draft.label,
-                        decoration: const InputDecoration(labelText: 'Label'),
+                        decoration: const InputDecoration(labelText: 'Etiqueta'),
                         onChanged: (value) => draft.label = value,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Label is required';
+                            return 'La etiqueta es obligatoria';
                           }
                           return null;
                         },
@@ -156,19 +156,19 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
                           Expanded(
                             child: DropdownButtonFormField<ChecklistItemType>(
                               value: draft.type,
-                              decoration: const InputDecoration(labelText: 'Type'),
+                              decoration: const InputDecoration(labelText: 'Tipo'),
                               items: const [
                                 DropdownMenuItem(
                                   value: ChecklistItemType.text,
-                                  child: Text('text'),
+                                  child: Text('Texto'),
                                 ),
                                 DropdownMenuItem(
                                   value: ChecklistItemType.boolType,
-                                  child: Text('bool'),
+                                  child: Text('Pasa/Falla'),
                                 ),
                                 DropdownMenuItem(
                                   value: ChecklistItemType.photo,
-                                  child: Text('photo'),
+                                  child: Text('Foto'),
                                 ),
                               ],
                               onChanged: (value) {
@@ -182,7 +182,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
                           const SizedBox(width: 12),
                           Column(
                             children: [
-                              const Text('Required'),
+                              const Text('Obligatorio'),
                               Switch(
                                 value: draft.required,
                                 onChanged: (value) {
@@ -215,7 +215,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Create template'),
+                  : const Text('Crear plantilla'),
             ),
           ],
         ),
