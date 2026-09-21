@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Finding, FindingSeverity, Ronda } from '../../domain/entities/Ronda.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 import { RondaAlreadyCompletedError } from './SaveRondaAnswers.js';
+import { canActOnRonda } from './canActOnRonda.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 export class AddFinding {
@@ -16,7 +17,7 @@ export class AddFinding {
     itemIndex?: number;
   }): Promise<Ronda> {
     const existing = await this.rondas.findById(input.rondaId);
-    if (!existing || existing.ownerId !== input.ownerId) {
+    if (!canActOnRonda(existing, input.ownerId)) {
       throw new RondaNotFoundError(input.rondaId);
     }
     if (existing.status === 'completed') {

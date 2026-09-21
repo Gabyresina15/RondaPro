@@ -1,5 +1,6 @@
 import type { Ronda, RondaAnswer } from '../../domain/entities/Ronda.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
+import { canActOnRonda } from './canActOnRonda.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 export class RondaAlreadyCompletedError extends Error {
@@ -18,7 +19,7 @@ export class SaveRondaAnswers {
     answers: RondaAnswer[],
   ): Promise<Ronda> {
     const existing = await this.rondas.findById(id);
-    if (!existing || existing.ownerId !== ownerId) {
+    if (!canActOnRonda(existing, ownerId)) {
       throw new RondaNotFoundError(id);
     }
     if (existing.status === 'completed') {
