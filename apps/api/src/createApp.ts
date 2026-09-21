@@ -7,6 +7,7 @@ import { LoginUser } from './application/auth/LoginUser.js';
 import { RegisterUser } from './application/auth/RegisterUser.js';
 import { GetDashboard } from './application/dashboard/GetDashboard.js';
 import { AssignRonda } from './application/rondas/AssignRonda.js';
+import { CreateInspectionOrder } from './application/rondas/CreateInspectionOrder.js';
 import { AddFinding } from './application/rondas/AddFinding.js';
 import { AddRondaPhotos } from './application/rondas/AddRondaPhotos.js';
 import { CompleteRonda } from './application/rondas/CompleteRonda.js';
@@ -46,6 +47,7 @@ import { authPlugin } from './adapters/http/plugins/authPlugin.js';
 import { containerPlugin } from './adapters/http/plugins/containerPlugin.js';
 import { notificationRoutes } from './adapters/http/routes/notificationRoutes.js';
 import { assignRoutes } from './adapters/http/routes/assignRoutes.js';
+import { orderRoutes } from './adapters/http/routes/orderRoutes.js';
 import { authRoutes } from './adapters/http/routes/authRoutes.js';
 import { dashboardRoutes } from './adapters/http/routes/dashboardRoutes.js';
 import { healthRoutes } from './adapters/http/routes/healthRoutes.js';
@@ -103,6 +105,9 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
         : 'Summary provider: heuristic (no GEMINI_API_KEY / OPENAI_API_KEY)',
   );
 
+  const startRonda = new StartRonda(rondas, templates, sites);
+  const assignRonda = new AssignRonda(rondas, users, notifications);
+
   const container = {
     registerUser: new RegisterUser(users, hasher, tokens),
     loginUser: new LoginUser(users, hasher, tokens),
@@ -112,7 +117,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     getTemplate: new GetTemplate(templates),
     updateTemplate: new UpdateTemplate(templates),
     deleteTemplate: new DeleteTemplate(templates),
-    startRonda: new StartRonda(rondas, templates, sites),
+    startRonda,
     listRondas: new ListRondas(rondas),
     getRonda: new GetRonda(rondas),
     exportRondaPdf: new ExportRondaPdf(rondas),
@@ -123,7 +128,8 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     addFinding: new AddFinding(rondas),
     resolveFinding: new ResolveFinding(rondas),
     updateFinding: new UpdateFinding(rondas),
-    assignRonda: new AssignRonda(rondas, users, notifications),
+    assignRonda,
+    createInspectionOrder: new CreateInspectionOrder(startRonda, assignRonda),
     listNotifications: new ListNotifications(notifications),
     markNotificationRead: new MarkNotificationRead(notifications),
     createSite: new CreateSite(sites),
@@ -144,6 +150,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(templateRoutes);
   await app.register(rondaRoutes);
   await app.register(assignRoutes);
+  await app.register(orderRoutes);
   await app.register(siteRoutes);
   await app.register(notificationRoutes);
   await app.register(dashboardRoutes);
