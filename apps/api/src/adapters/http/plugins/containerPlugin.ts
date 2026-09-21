@@ -7,6 +7,7 @@ import type { LoginUser } from '../../../application/auth/LoginUser.js';
 import type { RegisterUser } from '../../../application/auth/RegisterUser.js';
 import type { GetDashboard } from '../../../application/dashboard/GetDashboard.js';
 import type { AssignRonda } from '../../../application/rondas/AssignRonda.js';
+import type { CreateInspectionOrder } from '../../../application/rondas/CreateInspectionOrder.js';
 import type { AddFinding } from '../../../application/rondas/AddFinding.js';
 import type { AddRondaPhotos } from '../../../application/rondas/AddRondaPhotos.js';
 import type { CompleteRonda } from '../../../application/rondas/CompleteRonda.js';
@@ -52,6 +53,7 @@ export interface AppContainer {
   resolveFinding: ResolveFinding;
   updateFinding: UpdateFinding;
   assignRonda: AssignRonda;
+  createInspectionOrder: CreateInspectionOrder;
   createSite: CreateSite;
   listSites: ListSites;
   getSite: GetSite;
