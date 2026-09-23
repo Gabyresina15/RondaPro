@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../domain/checklist_item.dart';
+import '../domain/checklist_template.dart';
 import 'templates_controller.dart';
 
 class _DraftItem {
@@ -17,7 +18,9 @@ class _DraftItem {
 }
 
 class CreateTemplateScreen extends StatefulWidget {
-  const CreateTemplateScreen({super.key});
+  const CreateTemplateScreen({super.key, this.existing});
+
+  final ChecklistTemplate? existing;
 
   @override
   State<CreateTemplateScreen> createState() => _CreateTemplateScreenState();
@@ -25,16 +28,40 @@ class CreateTemplateScreen extends StatefulWidget {
 
 class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final List<_DraftItem> _items = [
-    _DraftItem(
-      label: 'Piso libre de riesgos',
-      required: true,
-      type: ChecklistItemType.boolType,
-    ),
-  ];
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final List<_DraftItem> _items;
   bool _saving = false;
+
+  bool get _editing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _nameController = TextEditingController(text: existing?.name ?? '');
+    _descriptionController =
+        TextEditingController(text: existing?.description ?? '');
+    if (existing != null && existing.items.isNotEmpty) {
+      _items = existing.items
+          .map(
+            (item) => _DraftItem(
+              label: item.label,
+              required: item.required,
+              type: item.type,
+            ),
+          )
+          .toList();
+    } else {
+      _items = [
+        _DraftItem(
+          label: 'Piso libre de riesgos',
+          required: true,
+          type: ChecklistItemType.boolType,
+        ),
+      ];
+    }
+  }
 
   @override
   void dispose() {
@@ -43,26 +70,38 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
     super.dispose();
   }
 
+  List<ChecklistItem> _payload() {
+    return _items
+        .map(
+          (d) => ChecklistItem(
+            label: d.label.trim(),
+            required: d.required,
+            type: d.type,
+          ),
+        )
+        .where((i) => i.label.isNotEmpty)
+        .toList();
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
     setState(() => _saving = true);
     final controller = context.read<TemplatesController>();
-    final ok = await controller.create(
-      name: _nameController.text.trim(),
-      description: _descriptionController.text.trim(),
-      items: _items
-          .map(
-            (d) => ChecklistItem(
-              label: d.label.trim(),
-              required: d.required,
-              type: d.type,
-            ),
+    final items = _payload();
+    final ok = _editing
+        ? await controller.update(
+            id: widget.existing!.id,
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            items: items,
           )
-          .where((i) => i.label.isNotEmpty)
-          .toList(),
-    );
+        : await controller.create(
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            items: items,
+          );
     setState(() => _saving = false);
     if (!mounted) {
       return;
@@ -71,7 +110,14 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(controller.error ?? 'No se pudo crear la plantilla')),
+        SnackBar(
+          content: Text(
+            controller.error ??
+                (_editing
+                    ? 'No se pudo guardar la plantilla'
+                    : 'No se pudo crear la plantilla'),
+          ),
+        ),
       );
     }
   }
@@ -92,7 +138,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nueva plantilla'),
+        title: Text(_editing ? 'Editar plantilla' : 'Nueva plantilla'),
       ),
       body: Form(
         key: _formKey,
@@ -118,15 +164,12 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
             const SizedBox(height: 24),
             Row(
               children: [
-                Text(
-                  'Ítems',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('Items', style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: _addItem,
                   icon: const Icon(Icons.add),
-                  label: const Text('Agregar ítem'),
+                  label: const Text('Agregar item'),
                 ),
               ],
             ),
@@ -215,7 +258,7 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Crear plantilla'),
+                  : Text(_editing ? 'Guardar cambios' : 'Crear plantilla'),
             ),
           ],
         ),
