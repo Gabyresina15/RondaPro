@@ -29,16 +29,10 @@ export class CompleteRonda {
     if (ronda.status === 'completed') {
       throw new RondaAlreadyCompletedError(id);
     }
-    if (ronda.photos.length < 2) {
-      throw new RondaCompletionError(
-        'La ronda necesita al menos 2 fotos para completarse',
-      );
-    }
-
     const template = await this.templates.findById(ronda.templateId);
     if (template) {
       for (const [index, item] of template.items.entries()) {
-        if (!item.required) continue;
+        if (!item.required || item.type === 'photo') continue;
         const answer = ronda.answers.find((a) => a.itemIndex === index);
         if (item.type === 'bool' && answer?.boolValue === undefined) {
           throw new RondaCompletionError(
@@ -49,14 +43,6 @@ export class CompleteRonda {
           throw new RondaCompletionError(
             `Falta la nota obligatoria: ${item.label}`,
           );
-        }
-        if (item.type === 'photo') {
-          const count = ronda.photos.filter((p) => p.itemIndex === index).length;
-          if (count < 1) {
-            throw new RondaCompletionError(
-              `Falta la foto obligatoria: ${item.label}`,
-            );
-          }
         }
       }
     }
