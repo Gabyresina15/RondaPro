@@ -5,12 +5,14 @@ export interface CreateSiteInput {
   address: string;
   notes: string;
   ownerId: string;
+  parentId?: string;
 }
 
 export interface UpdateSiteInput {
   name?: string;
   address?: string;
   notes?: string;
+  parentId?: string | null;
 }
 
 export interface SiteRepository {
