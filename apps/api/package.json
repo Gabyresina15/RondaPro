@@ -9,7 +9,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "eval:summaries": "tsx src/scripts/evalSummaries.ts",
+    "report:weekly": "tsx src/scripts/weeklyReport.ts"
   },
   "engines": {
     "node": ">=20"
