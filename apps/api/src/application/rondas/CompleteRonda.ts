@@ -35,14 +35,10 @@ export class CompleteRonda {
         if (!item.required || item.type === 'photo') continue;
         const answer = ronda.answers.find((a) => a.itemIndex === index);
         if (item.type === 'bool' && answer?.boolValue === undefined) {
-          throw new RondaCompletionError(
-            `Falta el check obligatorio: ${item.label}`,
-          );
+          throw new RondaCompletionError(`Falta el check obligatorio: ${item.label}`);
         }
         if (item.type === 'text' && !(answer?.textValue ?? '').trim()) {
-          throw new RondaCompletionError(
-            `Falta la nota obligatoria: ${item.label}`,
-          );
+          throw new RondaCompletionError(`Falta la nota obligatoria: ${item.label}`);
         }
       }
     }
@@ -53,6 +49,8 @@ export class CompleteRonda {
     const completed = await this.rondas.complete(id, ownerId, {
       summary: generated.text,
       summarySource: generated.source,
+      summaryModel: generated.model,
+      summaryLatencyMs: generated.latencyMs,
       completedAt: new Date(),
       findings,
     });
@@ -66,15 +64,9 @@ export class CompleteRonda {
 function mergeAutoFindings(ronda: Ronda): Finding[] {
   const findings = [...ronda.findings];
   for (const answer of ronda.answers) {
-    if (answer.type !== 'bool' || answer.boolValue !== false) {
-      continue;
-    }
-    const already = findings.some(
-      (f) => f.itemIndex === answer.itemIndex && f.status === 'open',
-    );
-    if (already) {
-      continue;
-    }
+    if (answer.type !== 'bool' || answer.boolValue !== false) continue;
+    const already = findings.some((f) => f.itemIndex === answer.itemIndex && f.status === 'open');
+    if (already) continue;
     findings.push({
       id: randomUUID(),
       title: `Check fallido: ${answer.label}`,
