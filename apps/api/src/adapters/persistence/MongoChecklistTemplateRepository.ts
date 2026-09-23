@@ -59,11 +59,11 @@ export class MongoChecklistTemplateRepository
 
   async update(
     id: string,
-    ownerId: string,
+    _ownerId: string,
     input: UpdateTemplateInput,
   ): Promise<ChecklistTemplate | null> {
-    const doc = await ChecklistTemplateModel.findOneAndUpdate(
-      { _id: id, ownerId },
+    const doc = await ChecklistTemplateModel.findByIdAndUpdate(
+      id,
       { $set: input },
       { new: true },
     ).exec();
