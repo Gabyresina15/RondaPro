@@ -4,6 +4,7 @@ export interface Site {
   address: string;
   notes: string;
   ownerId: string;
+  parentId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
