@@ -216,7 +216,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
   @override
   Widget build(BuildContext context) {
     final ronda = _ronda;
-    final canComplete = ronda.photos.length >= 2 && !_busy;
+    final canComplete = !_busy;
 
     return Scaffold(
       appBar: AppBar(
@@ -235,7 +235,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Text('${ronda.photos.length}/2 fotos mínimo'),
+          Text('${ronda.photos.length} foto(s) · opcionales'),
           const SizedBox(height: 16),
           ..._answers.map(_answerCard),
           const SizedBox(height: 8),
