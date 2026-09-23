@@ -5,6 +5,7 @@ class Site {
     required this.address,
     required this.notes,
     required this.ownerId,
+    this.parentId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -14,8 +15,11 @@ class Site {
   final String address;
   final String notes;
   final String ownerId;
+  final String? parentId;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  bool get isStore => parentId != null && parentId!.isNotEmpty;
 
   factory Site.fromJson(Map<String, dynamic> json) {
     return Site(
@@ -24,6 +28,7 @@ class Site {
       address: (json['address'] as String?) ?? '',
       notes: (json['notes'] as String?) ?? '',
       ownerId: json['ownerId'] as String,
+      parentId: json['parentId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
