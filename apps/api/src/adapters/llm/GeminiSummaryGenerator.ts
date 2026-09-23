@@ -56,6 +56,7 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
   constructor(private readonly config: GeminiSummaryConfig) {}
 
   async generate(ronda: Ronda): Promise<GeneratedSummary> {
+    const started = Date.now();
     const models = uniqueModels(this.config.model);
     let lastError = 'Gemini request failed';
 
@@ -64,7 +65,12 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
         try {
           const raw = await this.callModel(model, ronda, withSchema);
           const structured = parseStructuredSummary(raw);
-          return { text: formatStructuredSummary(structured), source: 'llm' };
+          return {
+            text: formatStructuredSummary(structured),
+            source: 'llm',
+            model,
+            latencyMs: Date.now() - started,
+          };
         } catch (err) {
           lastError = err instanceof Error ? err.message : String(err);
         }
@@ -147,6 +153,7 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
 function uniqueModels(preferred: string): string[] {
   const list = [
     preferred,
+    'gemini-3.1-flash-lite',
     'gemini-2.0-flash',
     'gemini-2.5-flash',
     'gemini-flash-latest',
