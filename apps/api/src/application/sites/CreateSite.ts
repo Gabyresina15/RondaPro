@@ -9,12 +9,14 @@ export class CreateSite {
     address: string;
     notes: string;
     ownerId: string;
+    parentId?: string;
   }): Promise<Site> {
     return this.sites.create({
       name: input.name.trim(),
       address: input.address.trim(),
       notes: input.notes.trim(),
       ownerId: input.ownerId,
+      parentId: input.parentId,
     });
   }
 }
