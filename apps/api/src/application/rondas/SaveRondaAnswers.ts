@@ -22,12 +22,9 @@ export class SaveRondaAnswers {
     if (!canActOnRonda(existing, ownerId)) {
       throw new RondaNotFoundError(id);
     }
-    if (existing.status === 'completed') {
-      throw new RondaAlreadyCompletedError(id);
-    }
     const updated = await this.rondas.saveAnswers(id, ownerId, answers);
     if (!updated) {
-      throw new RondaAlreadyCompletedError(id);
+      throw new RondaNotFoundError(id);
     }
     return updated;
   }
