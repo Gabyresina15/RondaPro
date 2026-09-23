@@ -37,7 +37,10 @@ import { MongoUserRepository } from './adapters/persistence/MongoUserRepository.
 import { BcryptPasswordHasher } from './adapters/security/BcryptPasswordHasher.js';
 import { JwtTokenService } from './adapters/security/JwtTokenService.js';
 import { LocalPhotoStorage } from './adapters/storage/LocalPhotoStorage.js';
-import { HeuristicSummaryGenerator } from './adapters/llm/HeuristicSummaryGenerator.js';
+import {
+  ConnectionFallbackSummaryGenerator,
+  HeuristicSummaryGenerator,
+} from './adapters/llm/HeuristicSummaryGenerator.js';
 import { GeminiSummaryGenerator } from './adapters/llm/GeminiSummaryGenerator.js';
 import {
   FallbackSummaryGenerator,
@@ -66,7 +69,7 @@ function buildSummaryGenerator(config: AppConfig): SummaryGenerator {
         model: config.GEMINI_MODEL,
         baseUrl: config.GEMINI_BASE_URL,
       }),
-      heuristic,
+      new ConnectionFallbackSummaryGenerator(),
     );
   }
   if (!config.OPENAI_API_KEY) {
@@ -97,13 +100,6 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   const hasher = new BcryptPasswordHasher();
   const tokens = new JwtTokenService(config.JWT_SECRET, config.JWT_EXPIRES_IN);
   const summaries = buildSummaryGenerator(config);
-  console.log(
-    config.GEMINI_API_KEY
-      ? `Summary provider: Gemini (${config.GEMINI_MODEL})`
-      : config.OPENAI_API_KEY
-        ? `Summary provider: OpenAI (${config.OPENAI_MODEL})`
-        : 'Summary provider: heuristic (no GEMINI_API_KEY / OPENAI_API_KEY)',
-  );
 
   const startRonda = new StartRonda(rondas, templates, sites);
   const assignRonda = new AssignRonda(rondas, users, notifications);
