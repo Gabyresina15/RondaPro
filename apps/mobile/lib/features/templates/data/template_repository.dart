@@ -31,4 +31,22 @@ class TemplateRepository {
     );
     return ChecklistTemplate.fromJson(json);
   }
+
+  Future<ChecklistTemplate> update({
+    required String id,
+    required String name,
+    required String description,
+    required List<ChecklistItem> items,
+  }) async {
+    final json = await _api.patchJson(
+      '/templates/$id',
+      {
+        'name': name,
+        'description': description,
+        'items': items.map((i) => i.toJson()).toList(),
+      },
+      auth: true,
+    );
+    return ChecklistTemplate.fromJson(json);
+  }
 }
