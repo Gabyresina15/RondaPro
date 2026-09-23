@@ -6,7 +6,7 @@ import type { ChecklistTemplateRepository } from '../../domain/ports/ChecklistTe
 
 export interface CreateTemplateInput {
   name: string;
-  description: string;
+  description?: string;
   items: ChecklistItem[];
   ownerId: string;
 }
@@ -17,7 +17,7 @@ export class CreateTemplate {
   async execute(input: CreateTemplateInput): Promise<ChecklistTemplate> {
     return this.templates.create({
       name: input.name.trim(),
-      description: input.description.trim(),
+      description: (input.description ?? '').trim(),
       items: input.items,
       ownerId: input.ownerId,
     });
