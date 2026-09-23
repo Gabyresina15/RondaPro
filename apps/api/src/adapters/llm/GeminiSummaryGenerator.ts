@@ -4,7 +4,6 @@ import type {
   SummaryGenerator,
 } from '../../domain/ports/SummaryGenerator.js';
 import {
-  AUDIT_JSON_SCHEMA,
   AUDIT_SYSTEM_PROMPT,
   formatStructuredSummary,
   parseStructuredSummary,
@@ -15,6 +14,22 @@ export interface GeminiSummaryConfig {
   model: string;
   baseUrl?: string;
 }
+
+const RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    resumen_ejecutivo: { type: 'STRING' },
+    nivel_de_riesgo: {
+      type: 'STRING',
+      enum: ['Bajo', 'Medio', 'Alto', 'Desconocido'],
+    },
+    acciones_recomendadas: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+    },
+  },
+  required: ['resumen_ejecutivo', 'nivel_de_riesgo', 'acciones_recomendadas'],
+};
 
 function rondaPayload(ronda: Ronda) {
   return {
@@ -41,13 +56,45 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
   constructor(private readonly config: GeminiSummaryConfig) {}
 
   async generate(ronda: Ronda): Promise<GeneratedSummary> {
+    const models = uniqueModels(this.config.model);
+    let lastError = 'Gemini request failed';
+
+    for (const model of models) {
+      for (const withSchema of [true, false]) {
+        try {
+          const raw = await this.callModel(model, ronda, withSchema);
+          const structured = parseStructuredSummary(raw);
+          return { text: formatStructuredSummary(structured), source: 'llm' };
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : String(err);
+        }
+      }
+    }
+
+    throw new Error(lastError);
+  }
+
+  private async callModel(
+    model: string,
+    ronda: Ronda,
+    withSchema: boolean,
+  ): Promise<string> {
     const base =
       this.config.baseUrl?.replace(/\/$/, '') ??
       'https://generativelanguage.googleapis.com/v1beta';
-    const url = `${base}/models/${this.config.model}:generateContent?key=${encodeURIComponent(this.config.apiKey)}`;
+    const url = `${base}/models/${model}:generateContent?key=${encodeURIComponent(this.config.apiKey)}`;
+
+    const generationConfig: Record<string, unknown> = {
+      temperature: 0.2,
+      maxOutputTokens: 700,
+      responseMimeType: 'application/json',
+    };
+    if (withSchema) {
+      generationConfig.responseSchema = RESPONSE_SCHEMA;
+    }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20_000);
+    const timeout = setTimeout(() => controller.abort(), 45_000);
 
     try {
       const response = await fetch(url, {
@@ -64,25 +111,20 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
               parts: [
                 {
                   text: [
-                    'Resume esta ronda de auditoría. Devolvé solo el JSON pedido.',
+                    'Resume esta ronda. Devolve solo JSON con resumen_ejecutivo, nivel_de_riesgo y acciones_recomendadas.',
                     JSON.stringify(rondaPayload(ronda)),
                   ].join('\n'),
                 },
               ],
             },
           ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 500,
-            responseMimeType: 'application/json',
-            responseSchema: AUDIT_JSON_SCHEMA,
-          },
+          generationConfig,
         }),
       });
 
       if (!response.ok) {
         const body = await response.text();
-        throw new Error(`Gemini request failed (${response.status}): ${body.slice(0, 240)}`);
+        throw new Error(`Gemini ${model} ${response.status}: ${body.slice(0, 180)}`);
       }
 
       const json = (await response.json()) as {
@@ -93,12 +135,21 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
         .join('')
         .trim();
       if (!raw) {
-        throw new Error('Gemini returned an empty summary');
+        throw new Error(`Gemini ${model} empty body`);
       }
-      const structured = parseStructuredSummary(raw);
-      return { text: formatStructuredSummary(structured), source: 'llm' };
+      return raw;
     } finally {
       clearTimeout(timeout);
     }
   }
+}
+
+function uniqueModels(preferred: string): string[] {
+  const list = [
+    preferred,
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+  ];
+  return [...new Set(list.filter(Boolean))];
 }
