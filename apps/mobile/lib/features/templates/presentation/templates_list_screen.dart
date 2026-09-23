@@ -8,6 +8,7 @@ import '../../rondas/presentation/perform_ronda_screen.dart';
 import '../../rondas/presentation/rondas_controller.dart';
 import '../../sites/domain/site.dart';
 import '../../sites/presentation/sites_controller.dart';
+import '../domain/checklist_template.dart';
 import 'create_template_screen.dart';
 import 'templates_controller.dart';
 
@@ -28,6 +29,17 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
       context.read<TemplatesController>().load();
       context.read<SitesController>().load();
     });
+  }
+
+  Future<void> _editTemplate(ChecklistTemplate item) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CreateTemplateScreen(existing: item),
+      ),
+    );
+    if (saved == true && mounted) {
+      await context.read<TemplatesController>().load();
+    }
   }
 
   @override
@@ -211,24 +223,34 @@ class _TemplatesListScreenState extends State<TemplatesListScreen> {
               title: Text(item.name),
               subtitle: Text(
                 item.description.isEmpty
-                    ? '${item.items.length} ítems · tocá para empezar'
-                    : '${item.description}\n${item.items.length} ítems · tocá para empezar',
+                    ? '${item.items.length} items · toca para empezar'
+                    : '${item.description}\n${item.items.length} items · toca para empezar',
               ),
               isThreeLine: item.description.isNotEmpty,
               leading: CircleAvatar(
                 child: Text('${item.items.length}'),
               ),
-              trailing: auth.user?.isSupervisor == true
-                  ? IconButton(
-                      tooltip: 'Ordenar inspección',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Editar plantilla',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _editTemplate(item),
+                  ),
+                  if (auth.user?.isSupervisor == true)
+                    IconButton(
+                      tooltip: 'Ordenar inspeccion',
                       icon: const Icon(Icons.assignment_ind_outlined),
                       onPressed: () => showCreateOrderSheet(
                         context: context,
                         templateId: item.id,
                       ),
-                    )
-                  : null,
+                    ),
+                ],
+              ),
               onTap: () => _startRonda(context, item.id),
+              onLongPress: () => _editTemplate(item),
             ),
           );
         },
