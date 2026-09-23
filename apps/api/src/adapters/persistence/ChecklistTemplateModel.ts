@@ -16,7 +16,7 @@ const checklistItemSchema = new Schema(
 const checklistTemplateSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    description: { type: String, required: true, default: '', trim: true },
+    description: { type: String, required: false, default: '', trim: true },
     items: { type: [checklistItemSchema], required: true, default: [] },
     ownerId: {
       type: Schema.Types.ObjectId,
