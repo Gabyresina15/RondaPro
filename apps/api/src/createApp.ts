@@ -37,10 +37,7 @@ import { MongoUserRepository } from './adapters/persistence/MongoUserRepository.
 import { BcryptPasswordHasher } from './adapters/security/BcryptPasswordHasher.js';
 import { JwtTokenService } from './adapters/security/JwtTokenService.js';
 import { LocalPhotoStorage } from './adapters/storage/LocalPhotoStorage.js';
-import {
-  ConnectionFallbackSummaryGenerator,
-  HeuristicSummaryGenerator,
-} from './adapters/llm/HeuristicSummaryGenerator.js';
+import { HeuristicSummaryGenerator } from './adapters/llm/HeuristicSummaryGenerator.js';
 import { GeminiSummaryGenerator } from './adapters/llm/GeminiSummaryGenerator.js';
 import {
   FallbackSummaryGenerator,
@@ -69,7 +66,7 @@ function buildSummaryGenerator(config: AppConfig): SummaryGenerator {
         model: config.GEMINI_MODEL,
         baseUrl: config.GEMINI_BASE_URL,
       }),
-      new ConnectionFallbackSummaryGenerator(),
+      heuristic,
     );
   }
   if (!config.OPENAI_API_KEY) {
