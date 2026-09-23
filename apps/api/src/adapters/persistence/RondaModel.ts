@@ -92,7 +92,11 @@ const rondaSchema = new Schema(
     findings: { type: [findingSchema], required: true, default: [] },
     summary: { type: String, required: false },
     summarySource: { type: String, required: false, enum: ['llm', 'heuristic'] },
+    summaryModel: { type: String, required: false },
+    summaryLatencyMs: { type: Number, required: false },
     completedAt: { type: Date, required: false },
+    lastEditedAt: { type: Date, required: false },
+    deletedAt: { type: Date, required: false, index: true },
   },
   {
     timestamps: true,
