@@ -14,21 +14,28 @@ import { RondaModel, type RondaDocument } from './RondaModel.js';
 function actorFilter(id: string, ownerId: string, extra: Record<string, unknown> = {}) {
   return {
     _id: id,
+    deletedAt: { $in: [null, undefined] },
     $or: [{ ownerId }, { assigneeId: ownerId }],
     ...extra,
   };
 }
 
 function toDomain(doc: RondaDocument): Ronda {
+  const extra = doc as RondaDocument & {
+    assigneeId?: unknown;
+    assigneeName?: string;
+    summaryModel?: string;
+    summaryLatencyMs?: number;
+    lastEditedAt?: Date;
+    deletedAt?: Date;
+  };
   return {
     id: doc._id.toHexString(),
     templateId: String(doc.templateId),
     templateName: doc.templateName,
     ownerId: String(doc.ownerId),
-    assigneeId: (doc as RondaDocument & { assigneeId?: unknown }).assigneeId
-      ? String((doc as RondaDocument & { assigneeId?: unknown }).assigneeId)
-      : undefined,
-    assigneeName: (doc as RondaDocument & { assigneeName?: string }).assigneeName,
+    assigneeId: extra.assigneeId ? String(extra.assigneeId) : undefined,
+    assigneeName: extra.assigneeName,
     siteId: doc.siteId ? String(doc.siteId) : undefined,
     siteName: doc.siteName ?? undefined,
     location: doc.location,
@@ -63,11 +70,17 @@ function toDomain(doc: RondaDocument): Ronda {
     })),
     summary: doc.summary ?? undefined,
     summarySource: (doc.summarySource as Ronda['summarySource']) ?? undefined,
+    summaryModel: extra.summaryModel,
+    summaryLatencyMs: extra.summaryLatencyMs,
     completedAt: doc.completedAt ?? undefined,
+    lastEditedAt: extra.lastEditedAt,
+    deletedAt: extra.deletedAt,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
 }
+
+const notDeleted = { deletedAt: { $in: [null, undefined] } };
 
 export class MongoRondaRepository implements RondaRepository {
   async create(input: CreateRondaInput): Promise<Ronda> {
@@ -88,6 +101,7 @@ export class MongoRondaRepository implements RondaRepository {
 
   async findByOwner(ownerId: string): Promise<Ronda[]> {
     const docs = await RondaModel.find({
+      ...notDeleted,
       $or: [{ ownerId }, { assigneeId: ownerId }],
     })
       .sort({ createdAt: -1 })
@@ -96,7 +110,7 @@ export class MongoRondaRepository implements RondaRepository {
   }
 
   async findAll(): Promise<Ronda[]> {
-    const docs = await RondaModel.find({}).sort({ createdAt: -1 }).exec();
+    const docs = await RondaModel.find(notDeleted).sort({ createdAt: -1 }).exec();
     return docs.map((d) => toDomain(d as RondaDocument));
   }
 
@@ -105,8 +119,8 @@ export class MongoRondaRepository implements RondaRepository {
     assigneeId: string,
     assigneeName: string,
   ): Promise<Ronda | null> {
-    const doc = await RondaModel.findByIdAndUpdate(
-      id,
+    const doc = await RondaModel.findOneAndUpdate(
+      { _id: id, ...notDeleted },
       { $set: { assigneeId, assigneeName } },
       { new: true },
     ).exec();
@@ -114,7 +128,7 @@ export class MongoRondaRepository implements RondaRepository {
   }
 
   async findById(id: string): Promise<Ronda | null> {
-    const doc = await RondaModel.findById(id).exec();
+    const doc = await RondaModel.findOne({ _id: id, ...notDeleted }).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
   }
 
@@ -124,8 +138,8 @@ export class MongoRondaRepository implements RondaRepository {
     answers: RondaAnswer[],
   ): Promise<Ronda | null> {
     const doc = await RondaModel.findOneAndUpdate(
-      actorFilter(id, ownerId, { status: 'in_progress' }),
-      { $set: { answers } },
+      actorFilter(id, ownerId),
+      { $set: { answers, lastEditedAt: new Date() } },
       { new: true },
     ).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
@@ -137,8 +151,8 @@ export class MongoRondaRepository implements RondaRepository {
     photos: RondaPhoto[],
   ): Promise<Ronda | null> {
     const doc = await RondaModel.findOneAndUpdate(
-      actorFilter(id, ownerId, { status: 'in_progress' }),
-      { $push: { photos: { $each: photos } } },
+      actorFilter(id, ownerId),
+      { $push: { photos: { $each: photos } }, $set: { lastEditedAt: new Date() } },
       { new: true },
     ).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
@@ -150,8 +164,8 @@ export class MongoRondaRepository implements RondaRepository {
     finding: Finding,
   ): Promise<Ronda | null> {
     const doc = await RondaModel.findOneAndUpdate(
-      actorFilter(id, ownerId, { status: 'in_progress' }),
-      { $push: { findings: finding } },
+      actorFilter(id, ownerId),
+      { $push: { findings: finding }, $set: { lastEditedAt: new Date() } },
       { new: true },
     ).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
@@ -174,7 +188,7 @@ export class MongoRondaRepository implements RondaRepository {
     findingId: string,
     patch: Partial<Finding>,
   ): Promise<Ronda | null> {
-    const set: Record<string, unknown> = {};
+    const set: Record<string, unknown> = { lastEditedAt: new Date() };
     if (patch.status !== undefined) set['findings.$.status'] = patch.status;
     if (patch.assignee !== undefined) set['findings.$.assignee'] = patch.assignee;
     if (patch.resolutionNote !== undefined) {
@@ -199,16 +213,25 @@ export class MongoRondaRepository implements RondaRepository {
       status: 'completed',
       summary: input.summary,
       summarySource: input.summarySource,
+      summaryModel: input.summaryModel,
+      summaryLatencyMs: input.summaryLatencyMs,
       completedAt: input.completedAt,
     };
-    if (input.findings) {
-      set.findings = input.findings;
-    }
+    if (input.findings) set.findings = input.findings;
     const doc = await RondaModel.findOneAndUpdate(
       actorFilter(id, ownerId, { status: 'in_progress' }),
       { $set: set },
       { new: true },
     ).exec();
     return doc ? toDomain(doc as RondaDocument) : null;
+  }
+
+  async softDelete(id: string, ownerId: string): Promise<boolean> {
+    const doc = await RondaModel.findOneAndUpdate(
+      actorFilter(id, ownerId),
+      { $set: { deletedAt: new Date() } },
+      { new: true },
+    ).exec();
+    return Boolean(doc);
   }
 }
