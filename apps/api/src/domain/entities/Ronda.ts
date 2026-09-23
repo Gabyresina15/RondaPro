@@ -49,7 +49,11 @@ export interface Ronda {
   findings: Finding[];
   summary?: string;
   summarySource?: 'llm' | 'heuristic';
+  summaryModel?: string;
+  summaryLatencyMs?: number;
   completedAt?: Date;
+  lastEditedAt?: Date;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
