@@ -5,6 +5,12 @@ const siteSchema = new Schema(
     name: { type: String, required: true, trim: true },
     address: { type: String, required: true, default: '', trim: true },
     notes: { type: String, required: true, default: '', trim: true },
+    parentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Site',
+      required: false,
+      index: true,
+    },
     ownerId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
