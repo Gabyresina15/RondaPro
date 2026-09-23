@@ -1,0 +1,11 @@
+{
+  "name": "rondapro",
+  "private": true,
+  "scripts": {
+    "eval:summaries": "npm run eval:summaries --prefix apps/api",
+    "report:weekly": "npm run report:weekly --prefix apps/api",
+    "seed": "npm run seed --prefix apps/api",
+    "typecheck": "npm run typecheck --prefix apps/api",
+    "dev:api": "npm run dev --prefix apps/api"
+  }
+}
