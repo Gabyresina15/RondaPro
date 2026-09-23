@@ -10,17 +10,27 @@ import {
 
 export class HeuristicSummaryGenerator implements SummaryGenerator {
   async generate(ronda: Ronda): Promise<GeneratedSummary> {
-    return { text: formatStructuredSummary(fromRonda(ronda)), source: 'heuristic' };
+    return {
+      text: formatStructuredSummary(fromRonda(ronda)),
+      source: 'heuristic',
+      model: 'heuristic',
+      latencyMs: 0,
+    };
   }
 }
 
 export class ConnectionFallbackSummaryGenerator implements SummaryGenerator {
   async generate(ronda: Ronda): Promise<GeneratedSummary> {
-    return { text: formatStructuredSummary(fromRonda(ronda)), source: 'heuristic' };
+    return {
+      text: formatStructuredSummary(fromRonda(ronda)),
+      source: 'heuristic',
+      model: 'heuristic',
+      latencyMs: 0,
+    };
   }
 }
 
-function fromRonda(ronda: Ronda): StructuredAuditSummary {
+export function fromRonda(ronda: Ronda): StructuredAuditSummary {
   const failed = ronda.answers.filter((a) => a.type === 'bool' && a.boolValue === false);
   const passed = ronda.answers.filter((a) => a.type === 'bool' && a.boolValue === true);
   const open = ronda.findings.filter((f) => f.status === 'open');
@@ -41,9 +51,7 @@ function fromRonda(ronda: Ronda): StructuredAuditSummary {
     passed.length || failed.length
       ? `Checklist: ${passed.length} item(s) conformes y ${failed.length} no conformes${failedLabels ? ` (${failedLabels})` : ''}.`
       : 'No se registraron checks booleanos.',
-    open.length
-      ? `Quedan ${open.length} hallazgo(s) abierto(s).`
-      : 'No hay hallazgos abiertos.',
+    open.length ? `Quedan ${open.length} hallazgo(s) abierto(s).` : 'No hay hallazgos abiertos.',
     notes.length ? `Se consignaron notas en: ${notes.join(', ')}.` : '',
   ].filter(Boolean).join(' ');
 
