@@ -8,8 +8,11 @@ export interface StructuredAuditSummary {
 
 export const AUDIT_SYSTEM_PROMPT = [
   'Eres un auditor senior experto en retail y facilities.',
-  'Tu objetivo es resumir hallazgos de una ronda de campo con tono corporativo, neutral y factual.',
+  'Resumí hallazgos con tono corporativo, neutral y factual.',
   'No inventes datos que no estén en el JSON de entrada.',
+  'nivel_de_riesgo: Alto si hay extintor/salida/seguridad en falla o hallazgo high;',
+  'Medio si hay checks fallidos o hallazgos abiertos; Bajo si todo pasa.',
+  'Usa Desconocido solo si no hay datos suficientes.',
   'Responde únicamente con JSON válido, sin markdown.',
 ].join(' ');
 
