@@ -5,6 +5,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../rondas/domain/ronda.dart';
 import '../../rondas/presentation/ronda_detail_screen.dart';
 import '../../rondas/presentation/rondas_controller.dart';
+import '../../sites/domain/site.dart';
 import '../../sites/presentation/sites_controller.dart';
 import 'dashboard_controller.dart';
 
@@ -41,42 +42,70 @@ class _PanelScreenState extends State<PanelScreen> {
     final name = TextEditingController();
     final address = TextEditingController();
     final notes = TextEditingController();
+    final buildings = context.read<SitesController>().buildings;
+    Site? parent;
     final created = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(S.of(context).newSite),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: name,
-                  decoration: InputDecoration(labelText: S.of(context).name),
+        return StatefulBuilder(
+          builder: (context, setLocal) {
+            return AlertDialog(
+              title: Text(S.of(context).newSite),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: name,
+                      decoration: InputDecoration(labelText: S.of(context).name),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: address,
+                      decoration: InputDecoration(labelText: S.of(context).address),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: notes,
+                      decoration: InputDecoration(labelText: S.of(context).notes),
+                    ),
+                    if (buildings.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<Site?>(
+                        value: parent,
+                        decoration: const InputDecoration(
+                          labelText: 'Pertenece a (edificio / mall)',
+                        ),
+                        items: [
+                          const DropdownMenuItem<Site?>(
+                            value: null,
+                            child: Text('Ninguno (es edificio o local suelto)'),
+                          ),
+                          ...buildings.map(
+                            (site) => DropdownMenuItem<Site?>(
+                              value: site,
+                              child: Text(site.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) => setLocal(() => parent = value),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: address,
-                  decoration: InputDecoration(labelText: S.of(context).address),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(S.of(context).cancel),
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: notes,
-                  decoration: InputDecoration(labelText: S.of(context).notes),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(S.of(context).create),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(S.of(context).cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(S.of(context).create),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -90,6 +119,7 @@ class _PanelScreenState extends State<PanelScreen> {
           name: name.text.trim(),
           address: address.text.trim(),
           notes: notes.text.trim(),
+          parentId: parent?.id,
         );
     if (ok && mounted) {
       await context.read<DashboardController>().load();
@@ -165,7 +195,7 @@ class _PanelScreenState extends State<PanelScreen> {
                     [
                       entry.ronda.siteName ?? entry.ronda.templateName,
                       entry.finding.severity,
-                    ].join(' · '),
+                    ].join(' \u00b7 '),
                   ),
                   onTap: () {
                     Navigator.of(context).push(
@@ -188,19 +218,24 @@ class _PanelScreenState extends State<PanelScreen> {
             ),
           ),
           if (sites.items.isEmpty)
-            const Text('Todavía no hay sitios. Agregá un local.')
+            const Text('Todavia no hay sitios. Agrega un edificio o un local.')
           else
-            ...sites.items.map(
-              (site) => Card(
+            ...sites.items.map((site) {
+              final parent = sites.parentOf(site);
+              return Card(
                 child: ListTile(
-                  leading: const Icon(Icons.storefront_outlined),
+                  leading: Icon(
+                    site.isStore ? Icons.storefront_outlined : Icons.apartment_outlined,
+                  ),
                   title: Text(site.name),
                   subtitle: Text(
-                    site.address.isEmpty ? site.notes : site.address,
+                    parent != null
+                        ? 'Local de ${parent.name}'
+                        : (site.address.isEmpty ? 'Edificio / local suelto' : site.address),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
         ],
       ),
     );
