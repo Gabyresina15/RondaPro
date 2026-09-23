@@ -69,7 +69,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.read<RondasController>().error ?? 'Could not upload photo',
+              context.read<RondasController>().error ?? 'No se pudo subir la foto',
             ),
           ),
         );
@@ -105,7 +105,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.read<RondasController>().error ?? 'Could not add demo photos',
+              context.read<RondasController>().error ?? 'No se pudieron agregar las fotos',
             ),
           ),
         );
@@ -123,41 +123,41 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
         return StatefulBuilder(
           builder: (context, setLocal) {
             return AlertDialog(
-              title: const Text('New finding'),
+              title: const Text('Nuevo hallazgo'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: title,
-                    decoration: const InputDecoration(labelText: 'Title'),
+                    decoration: const InputDecoration(labelText: 'Título'),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: notes,
-                    decoration: const InputDecoration(labelText: 'Notes'),
+                    decoration: const InputDecoration(labelText: 'Notas'),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: severity,
                     items: const [
-                      DropdownMenuItem(value: 'low', child: Text('Low')),
-                      DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                      DropdownMenuItem(value: 'high', child: Text('High')),
+                      DropdownMenuItem(value: 'low', child: Text('Baja')),
+                      DropdownMenuItem(value: 'medium', child: Text('Media')),
+                      DropdownMenuItem(value: 'high', child: Text('Alta')),
                     ],
                     onChanged: (value) =>
                         setLocal(() => severity = value ?? 'medium'),
-                    decoration: const InputDecoration(labelText: 'Severity'),
+                    decoration: const InputDecoration(labelText: 'Gravedad'),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: const Text('Cancelar'),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Save'),
+                  child: const Text('Guardar'),
                 ),
               ],
             );
@@ -180,7 +180,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.read<RondasController>().error ?? 'Could not add finding',
+              context.read<RondasController>().error ?? 'No se pudo agregar el hallazgo',
             ),
           ),
         );
@@ -200,7 +200,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.read<RondasController>().error ?? 'Could not complete ronda',
+            context.read<RondasController>().error ?? 'No se pudo completar la ronda',
           ),
         ),
       );
@@ -230,17 +230,17 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
               if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
               if (ronda.location.isNotEmpty) ronda.location,
               if ((ronda.siteName ?? '').isEmpty && ronda.location.isEmpty)
-                'Location not specified',
+                'Sin ubicación',
             ].join(' · '),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Text('${ronda.photos.length}/2 photos minimum'),
+          Text('${ronda.photos.length}/2 fotos mínimo'),
           const SizedBox(height: 16),
           ..._answers.map(_answerCard),
           const SizedBox(height: 8),
           if (ronda.findings.isNotEmpty) ...[
-            Text('Findings', style: Theme.of(context).textTheme.titleMedium),
+            Text('Hallazgos', style: Theme.of(context).textTheme.titleMedium),
             ...ronda.findings.map(
               (f) => ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -255,13 +255,13 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
           OutlinedButton.icon(
             onPressed: _busy ? null : _addFinding,
             icon: const Icon(Icons.flag_outlined),
-            label: const Text('Add finding'),
+            label: const Text('Agregar hallazgo'),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _busy ? null : _addDemoPhotos,
             icon: const Icon(Icons.photo_library_outlined),
-            label: const Text('Add 2 demo photos'),
+            label: const Text('Agregar 2 fotos de demo'),
           ),
           const SizedBox(height: 12),
           FilledButton(
@@ -272,7 +272,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                     width: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Complete ronda'),
+                : const Text('Completar ronda'),
           ),
         ],
       ),
@@ -292,7 +292,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
             if (answer.type == 'bool')
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(answer.boolValue == true ? 'Pass' : 'Pending / fail'),
+                title: Text(answer.boolValue == true ? 'Pasa' : 'Pendiente / falla'),
                 value: answer.boolValue ?? false,
                 onChanged: _busy
                     ? null
@@ -310,7 +310,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                 enabled: !_busy,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(hintText: 'Notes'),
+                decoration: const InputDecoration(hintText: 'Notas'),
                 onChanged: (value) {
                   _answers[answer.itemIndex] =
                       answer.copyWith(textValue: value);
@@ -320,7 +320,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
               ),
             if (answer.type == 'photo') ...[
               Text(
-                'Photos for this item: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
+                'Fotos de este ítem: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
@@ -328,7 +328,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                     ? null
                     : () => _pickPhoto(itemIndex: answer.itemIndex),
                 icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('Take photo (emulator camera)'),
+                label: const Text('Sacar foto'),
               ),
             ],
             if (answer.type != 'photo') ...[
@@ -338,7 +338,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                     ? null
                     : () => _pickPhoto(itemIndex: answer.itemIndex),
                 icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('Take extra photo'),
+                label: const Text('Foto extra'),
               ),
             ],
           ],
