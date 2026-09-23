@@ -7,12 +7,14 @@ import type {
 import { SiteModel, type SiteDocument } from './SiteModel.js';
 
 function toDomain(doc: SiteDocument): Site {
+  const parent = (doc as SiteDocument & { parentId?: unknown }).parentId;
   return {
     id: doc._id.toHexString(),
     name: doc.name,
     address: doc.address,
     notes: doc.notes,
     ownerId: String(doc.ownerId),
+    parentId: parent ? String(parent) : undefined,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -41,14 +43,10 @@ export class MongoSiteRepository implements SiteRepository {
 
   async update(
     id: string,
-    ownerId: string,
+    _ownerId: string,
     input: UpdateSiteInput,
   ): Promise<Site | null> {
-    const doc = await SiteModel.findOneAndUpdate(
-      { _id: id, ownerId },
-      { $set: input },
-      { new: true },
-    ).exec();
+    const doc = await SiteModel.findByIdAndUpdate(id, { $set: input }, { new: true }).exec();
     return doc ? toDomain(doc as SiteDocument) : null;
   }
 
