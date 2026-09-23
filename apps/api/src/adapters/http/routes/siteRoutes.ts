@@ -12,6 +12,7 @@ function serializeSite(site: {
   address: string;
   notes: string;
   ownerId: string;
+  parentId?: string;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -20,6 +21,7 @@ function serializeSite(site: {
     name: site.name,
     address: site.address,
     notes: site.notes,
+    parentId: site.parentId ?? null,
     ownerId: site.ownerId,
     createdAt: site.createdAt.toISOString(),
     updatedAt: site.updatedAt.toISOString(),
