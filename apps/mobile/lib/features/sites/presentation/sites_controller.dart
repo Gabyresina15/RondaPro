@@ -13,8 +13,19 @@ class SitesController extends ChangeNotifier {
   String? _error;
 
   List<Site> get items => _items;
+  List<Site> get buildings =>
+      _items.where((s) => s.parentId == null || s.parentId!.isEmpty).toList();
   bool get loading => _loading;
   String? get error => _error;
+
+  Site? parentOf(Site site) {
+    if (site.parentId == null) return null;
+    try {
+      return _items.firstWhere((s) => s.id == site.parentId);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> load() async {
     _loading = true;
@@ -35,12 +46,14 @@ class SitesController extends ChangeNotifier {
     required String name,
     required String address,
     required String notes,
+    String? parentId,
   }) async {
     try {
       final created = await _repository.create(
         name: name,
         address: address,
         notes: notes,
+        parentId: parentId,
       );
       _items = [created, ..._items];
       notifyListeners();
