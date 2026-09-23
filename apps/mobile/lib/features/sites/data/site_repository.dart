@@ -16,10 +16,16 @@ class SiteRepository {
     required String name,
     required String address,
     required String notes,
+    String? parentId,
   }) async {
     final json = await _api.postJson(
       '/sites',
-      {'name': name, 'address': address, 'notes': notes},
+      {
+        'name': name,
+        'address': address,
+        'notes': notes,
+        if (parentId != null && parentId.isNotEmpty) 'parentId': parentId,
+      },
       auth: true,
     );
     return Site.fromJson(json);
