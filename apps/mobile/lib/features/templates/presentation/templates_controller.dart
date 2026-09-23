@@ -54,4 +54,29 @@ class TemplatesController extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> update({
+    required String id,
+    required String name,
+    required String description,
+    required List<ChecklistItem> items,
+  }) async {
+    _error = null;
+    notifyListeners();
+    try {
+      final updated = await _repository.update(
+        id: id,
+        name: name,
+        description: description,
+        items: items,
+      );
+      _items = _items.map((t) => t.id == id ? updated : t).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }
