@@ -13,6 +13,8 @@ export interface CreateRondaInput {
 export interface CompleteRondaInput {
   summary: string;
   summarySource: 'llm' | 'heuristic';
+  summaryModel?: string;
+  summaryLatencyMs?: number;
   completedAt: Date;
   findings?: Finding[];
 }
@@ -54,4 +56,5 @@ export interface RondaRepository {
     ownerId: string,
     input: CompleteRondaInput,
   ): Promise<Ronda | null>;
+  softDelete(id: string, ownerId: string): Promise<boolean>;
 }
