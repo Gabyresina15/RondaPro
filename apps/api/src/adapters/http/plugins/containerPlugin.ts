@@ -11,6 +11,7 @@ import type { CreateInspectionOrder } from '../../../application/rondas/CreateIn
 import type { AddFinding } from '../../../application/rondas/AddFinding.js';
 import type { AddRondaPhotos } from '../../../application/rondas/AddRondaPhotos.js';
 import type { CompleteRonda } from '../../../application/rondas/CompleteRonda.js';
+import type { DeleteRonda } from '../../../application/rondas/DeleteRonda.js';
 import type { ExportRondaPdf } from '../../../application/rondas/ExportRondaPdf.js';
 import type { GetRonda } from '../../../application/rondas/GetRonda.js';
 import type { GetRondaPhoto } from '../../../application/rondas/GetRondaPhoto.js';
@@ -45,6 +46,7 @@ export interface AppContainer {
   listRondas: ListRondas;
   getRonda: GetRonda;
   exportRondaPdf: ExportRondaPdf;
+  deleteRonda: DeleteRonda;
   saveRondaAnswers: SaveRondaAnswers;
   addRondaPhotos: AddRondaPhotos;
   completeRonda: CompleteRonda;
