@@ -11,6 +11,7 @@ import { CreateInspectionOrder } from './application/rondas/CreateInspectionOrde
 import { AddFinding } from './application/rondas/AddFinding.js';
 import { AddRondaPhotos } from './application/rondas/AddRondaPhotos.js';
 import { CompleteRonda } from './application/rondas/CompleteRonda.js';
+import { DeleteRonda } from './application/rondas/DeleteRonda.js';
 import { ExportRondaPdf } from './application/rondas/ExportRondaPdf.js';
 import { GetRonda } from './application/rondas/GetRonda.js';
 import { GetRondaPhoto } from './application/rondas/GetRondaPhoto.js';
@@ -52,6 +53,7 @@ import { authRoutes } from './adapters/http/routes/authRoutes.js';
 import { dashboardRoutes } from './adapters/http/routes/dashboardRoutes.js';
 import { healthRoutes } from './adapters/http/routes/healthRoutes.js';
 import { rondaRoutes } from './adapters/http/routes/rondaRoutes.js';
+import { rondaDeleteRoutes } from './adapters/http/routes/rondaDeleteRoutes.js';
 import { siteRoutes } from './adapters/http/routes/siteRoutes.js';
 import { templateRoutes } from './adapters/http/routes/templateRoutes.js';
 import type { AppConfig } from './config.js';
@@ -113,7 +115,8 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
     startRonda,
     listRondas: new ListRondas(rondas),
     getRonda: new GetRonda(rondas),
-    exportRondaPdf: new ExportRondaPdf(rondas),
+    exportRondaPdf: new ExportRondaPdf(rondas, photos),
+    deleteRonda: new DeleteRonda(rondas),
     saveRondaAnswers: new SaveRondaAnswers(rondas),
     addRondaPhotos: new AddRondaPhotos(rondas, photos),
     completeRonda: new CompleteRonda(rondas, templates, summaries),
@@ -142,6 +145,7 @@ export async function createApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(authRoutes);
   await app.register(templateRoutes);
   await app.register(rondaRoutes);
+  await app.register(rondaDeleteRoutes);
   await app.register(assignRoutes);
   await app.register(orderRoutes);
   await app.register(siteRoutes);
