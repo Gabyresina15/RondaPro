@@ -64,4 +64,17 @@ class SitesController extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> moveToBuilding(String siteId, String? parentId) async {
+    try {
+      final updated = await _repository.updateParent(id: siteId, parentId: parentId);
+      _items = _items.map((s) => s.id == siteId ? updated : s).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }

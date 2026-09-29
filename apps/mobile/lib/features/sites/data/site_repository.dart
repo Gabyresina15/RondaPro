@@ -30,4 +30,16 @@ class SiteRepository {
     );
     return Site.fromJson(json);
   }
+
+  Future<Site> updateParent({
+    required String id,
+    required String? parentId,
+  }) async {
+    final json = await _api.patchJson(
+      '/sites/$id',
+      {'parentId': parentId},
+      auth: true,
+    );
+    return Site.fromJson(json);
+  }
 }
