@@ -38,6 +38,59 @@ class _PanelScreenState extends State<PanelScreen> {
     ]);
   }
 
+  Future<void> _moveSite(Site site) async {
+    final buildings = context
+        .read<SitesController>()
+        .buildings
+        .where((b) => b.id != site.id)
+        .toList();
+    if (buildings.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Primero crea un edificio (sitio sin padre).')),
+      );
+      return;
+    }
+    Site? selected = buildings.first;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocal) {
+            return AlertDialog(
+              title: Text('Mover ${site.name}'),
+              content: DropdownButtonFormField<Site?>(
+                value: selected,
+                decoration: const InputDecoration(labelText: 'Edificio / mall'),
+                items: [
+                  const DropdownMenuItem<Site?>(
+                    value: null,
+                    child: Text('Ninguno (queda suelto)'),
+                  ),
+                  ...buildings.map(
+                    (b) => DropdownMenuItem<Site?>(value: b, child: Text(b.name)),
+                  ),
+                ],
+                onChanged: (value) => setLocal(() => selected = value),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Mover'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (ok != true || !mounted) return;
+    await context.read<SitesController>().moveToBuilding(site.id, selected?.id);
+  }
+
   Future<void> _createSite() async {
     final name = TextEditingController();
     final address = TextEditingController();
@@ -231,8 +284,9 @@ class _PanelScreenState extends State<PanelScreen> {
                   subtitle: Text(
                     parent != null
                         ? 'Local de ${parent.name}'
-                        : (site.address.isEmpty ? 'Edificio / local suelto' : site.address),
+                        : (site.address.isEmpty ? 'Edificio / local suelto \u00b7 toca largo para mover' : site.address),
                   ),
+                  onLongPress: () => _moveSite(site),
                 ),
               );
             }),
