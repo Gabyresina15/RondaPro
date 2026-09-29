@@ -147,6 +147,10 @@ class RondaRepository {
     return Ronda.fromJson(json);
   }
 
+  Future<void> delete(String id) {
+    return _api.delete('/rondas/$id', auth: true);
+  }
+
   Future<List<int>> photoBytes(String rondaId, String photoId) {
     return _api.getBytes('/rondas/$rondaId/photos/$photoId', auth: true);
   }
