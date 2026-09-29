@@ -174,4 +174,20 @@ class RondasController extends ChangeNotifier {
       return null;
     }
   }
+
+  Future<bool> deleteRonda(String id) async {
+    try {
+      await _repository.delete(id);
+      _items = _items.where((item) => item.id != id).toList();
+      if (_current?.id == id) {
+        _current = null;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }
