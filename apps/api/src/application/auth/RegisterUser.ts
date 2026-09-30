@@ -41,9 +41,10 @@ export class RegisterUser {
       email,
       passwordHash,
       name: input.name.trim(),
+      role: 'auditor',
     });
 
-    const token = this.tokens.sign({ sub: user.id, email: user.email });
+    const token = this.tokens.sign({ sub: user.id, email: user.email, role: user.role });
     return { user: toUserPublic(user), token };
   }
 }

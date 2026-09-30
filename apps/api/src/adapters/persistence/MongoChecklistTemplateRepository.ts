@@ -13,7 +13,7 @@ function toDomain(doc: ChecklistTemplateDocument): ChecklistTemplate {
   return {
     id: doc._id.toHexString(),
     name: doc.name,
-    description: doc.description,
+    description: doc.description ?? '',
     items: doc.items.map((item) => ({
       label: item.label,
       required: item.required,
