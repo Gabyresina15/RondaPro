@@ -11,10 +11,10 @@ class AppConfig {
 
   /// When true, the inspection screen shows a shortcut that attaches two
   /// bundled evidence JPEGs (needed for web / desktop recordings).
-  /// Disable for production-looking builds:
-  /// `--dart-define=DEMO_MODE=false`
+  /// Enable explicitly for demos:
+  /// `--dart-define=DEMO_MODE=true`
   static const bool demoMode = bool.fromEnvironment(
     'DEMO_MODE',
-    defaultValue: true,
+    defaultValue: false,
   );
 }
