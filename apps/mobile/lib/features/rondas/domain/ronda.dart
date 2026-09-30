@@ -5,6 +5,7 @@ class RondaAnswer {
     required this.type,
     this.textValue,
     this.boolValue,
+    this.naValue = false,
   });
 
   final int itemIndex;
@@ -12,6 +13,7 @@ class RondaAnswer {
   final String type;
   final String? textValue;
   final bool? boolValue;
+  final bool naValue;
 
   factory RondaAnswer.fromJson(Map<String, dynamic> json) {
     return RondaAnswer(
@@ -20,6 +22,7 @@ class RondaAnswer {
       type: json['type'] as String,
       textValue: json['textValue'] as String?,
       boolValue: json['boolValue'] as bool?,
+      naValue: json['naValue'] == true,
     );
   }
 
@@ -30,12 +33,14 @@ class RondaAnswer {
       'type': type,
       if (textValue != null) 'textValue': textValue,
       if (boolValue != null) 'boolValue': boolValue,
+      if (naValue) 'naValue': true,
     };
   }
 
   RondaAnswer copyWith({
     String? textValue,
     bool? boolValue,
+    bool? naValue,
     bool clearBool = false,
   }) {
     return RondaAnswer(
@@ -44,6 +49,7 @@ class RondaAnswer {
       type: type,
       textValue: textValue ?? this.textValue,
       boolValue: clearBool ? null : (boolValue ?? this.boolValue),
+      naValue: naValue ?? this.naValue,
     );
   }
 }
