@@ -1,0 +1,20 @@
+import 'dart:typed_data';
+
+import 'package:share_plus/share_plus.dart';
+
+Future<void> shareRondaPdf({
+  required List<int> bytes,
+  required String rondaId,
+  required String text,
+}) {
+  return Share.shareXFiles(
+    [
+      XFile.fromData(
+        Uint8List.fromList(bytes),
+        mimeType: 'application/pdf',
+        name: 'rondapro-$rondaId.pdf',
+      ),
+    ],
+    text: text,
+  );
+}
