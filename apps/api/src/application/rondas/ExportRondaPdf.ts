@@ -92,6 +92,7 @@ function headerLines(ronda: Ronda): string[] {
     `Cerrada: ${ronda.completedAt?.toISOString().slice(0, 16).replace('T', ' ') ?? '-'} UTC`,
     `Editada: ${ronda.lastEditedAt?.toISOString().slice(0, 16).replace('T', ' ') ?? '-'} UTC`,
     `Fuente: ${source}`,
+    `Riesgo: ${ronda.summaryRisk ?? '-'}`,
     '',
     '1. RESUMEN',
     ronda.summary?.trim() || 'Sin resumen.',
@@ -108,7 +109,9 @@ function headerLines(ronda: Ronda): string[] {
   lines.push('', '3. CHECKLIST');
   for (const a of ronda.answers) {
     let value = '-';
-    if (a.type === 'bool') value = a.boolValue === true ? 'Pasa' : a.boolValue === false ? 'No pasa' : 'Sin responder';
+    if (a.type === 'bool') {
+      value = a.naValue ? 'N/A' : a.boolValue === true ? 'Pasa' : a.boolValue === false ? 'No pasa' : 'Sin responder';
+    }
     else if (a.type === 'text') value = a.textValue?.trim() || 'Sin notas';
     else value = 'Evidencia fotografica';
     lines.push(`- ${a.label}: ${value}`);
@@ -195,7 +198,7 @@ export class ExportRondaPdf {
     const offsets = [0];
     for (let i = 0; i < objs.length; i += 1) {
       offsets.push(chunks.reduce((s, c) => s + c.length, 0));
-      const parts = [Buffer.from(`${i + 1} 0 obj\n`, 'latin1')];
+      const parts: Buffer[] = [Buffer.from(`${i + 1} 0 obj\n`, 'latin1')];
       for (const part of objs[i]) {
         if (part.text) parts.push(Buffer.from(part.text, 'latin1'));
         if (part.binary) parts.push(part.binary);
