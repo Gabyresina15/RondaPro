@@ -20,9 +20,10 @@ Ritmo: pausas cortas (0.4–0.8 s) en cada pantalla nueva; no correr el mouse.
      --dart-define=API_BASE_URL=http://127.0.0.1:3000 \
      --dart-define=DEMO_MODE=true
    ```
-5. Para vender IA de verdad, poné `GEMINI_API_KEY` en `apps/api/.env` **antes** de levantar la API. Si tenés `GEMINI_MODEL=gemini-2.0-flash`, cambialo a `gemini-2.5-flash` o borralo (el default ya es 2.5). No pegues la key en el video ni en el repo.
-6. Completá **una ronda de ensayo** (login → plantilla → fotos → completar → PDF) y borrala de la cabeza: esa pasada no se graba.
-7. Ventana del browser a 1280×720. Ocultá bookmarks. `debugShowCheckedModeBanner` ya está en false.
+5. Para vender IA de verdad, poné `GEMINI_API_KEY` en `apps/api/.env` **antes** de levantar la API. Si tu `.env` todavía tiene `GEMINI_MODEL=gemini-2.0-flash`, cambialo a `gemini-2.5-flash` o borralo (el default del repo ya es 2.5 + `thinkingBudget: 0`). No pegues la key en el video ni en el repo.
+6. Las fotos de **Adjuntar fotos** son JPEG 640×480 (display promo + extintor). Si ves cuadrados de un color, no hiciste `git pull` de este commit.
+7. Completá **una ronda de ensayo** (login → plantilla → fotos → completar → PDF) y borrala de la cabeza: esa pasada no se graba.
+8. Ventana del browser a 1280×720. Ocultá bookmarks. `debugShowCheckedModeBanner` ya está en false.
 
 ### Captions en pantalla (esta grabación)
 
@@ -131,6 +132,7 @@ Acentos: la UI está en español, pero el PDF dobla a ASCII (`gondola`, `deposit
 - [ ] Ensayo completo hecho (no se graba)
 - [ ] Key de Gemini cargada **o** decisión consciente de mostrar heurístico
 - [ ] `DEMO_MODE=true` (si no, el botón **Adjuntar fotos** no aparece y en web no hay cámara)
+- [ ] Si tu `.env` tenía `GEMINI_MODEL=gemini-2.0-flash`, cambialo o borralo y reiniciá la API
 - [ ] 1280×720, 16:9
 - [ ] Captions listos en el editor (CapCut / Premiere)
 - [ ] No se ve `.env`, terminal con keys, ni `Agregar 2 fotos de demo`
