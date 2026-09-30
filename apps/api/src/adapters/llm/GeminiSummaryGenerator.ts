@@ -23,12 +23,21 @@ const RESPONSE_SCHEMA = {
       type: 'STRING',
       enum: ['Bajo', 'Medio', 'Alto', 'Desconocido'],
     },
+    hallazgos_clave: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+    },
     acciones_recomendadas: {
       type: 'ARRAY',
       items: { type: 'STRING' },
     },
   },
-  required: ['resumen_ejecutivo', 'nivel_de_riesgo', 'acciones_recomendadas'],
+  required: [
+    'resumen_ejecutivo',
+    'nivel_de_riesgo',
+    'hallazgos_clave',
+    'acciones_recomendadas',
+  ],
 };
 
 function rondaPayload(ronda: Ronda) {
@@ -70,6 +79,9 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
             source: 'llm',
             model,
             latencyMs: Date.now() - started,
+            risk: structured.nivel_de_riesgo,
+            keyFindings: structured.hallazgos_clave,
+            actions: structured.acciones_recomendadas,
           };
         } catch (err) {
           lastError = err instanceof Error ? err.message : String(err);
@@ -118,7 +130,7 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
               parts: [
                 {
                   text: [
-                    'Resume esta ronda. Devolve solo JSON con resumen_ejecutivo, nivel_de_riesgo y acciones_recomendadas.',
+                    'Resume esta ronda. Devolve solo JSON con resumen_ejecutivo, nivel_de_riesgo, hallazgos_clave y acciones_recomendadas.',
                     JSON.stringify(rondaPayload(ronda)),
                   ].join('\n'),
                 },

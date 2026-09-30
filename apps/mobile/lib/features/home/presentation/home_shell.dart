@@ -47,7 +47,13 @@ class _HomeShellState extends State<HomeShell> {
     final unread = context.watch<NotificationsController>().unreadCount;
     return Scaffold(
       appBar: AppBar(
-        title: Text('${titles[_index]} · ${s.roleLabel(role)}'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('RondaPro', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text('${titles[_index]} · ${s.roleLabel(role)}', style: const TextStyle(fontSize: 12)),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Notificaciones',
