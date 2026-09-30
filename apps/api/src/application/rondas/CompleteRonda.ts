@@ -51,6 +51,9 @@ export class CompleteRonda {
       summarySource: generated.source,
       summaryModel: generated.model,
       summaryLatencyMs: generated.latencyMs,
+      summaryRisk: generated.risk,
+      summaryKeyFindings: generated.keyFindings,
+      summaryActions: generated.actions,
       completedAt: new Date(),
       findings,
     });

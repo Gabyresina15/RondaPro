@@ -51,6 +51,9 @@ export interface Ronda {
   summarySource?: 'llm' | 'heuristic';
   summaryModel?: string;
   summaryLatencyMs?: number;
+  summaryRisk?: string;
+  summaryKeyFindings?: string[];
+  summaryActions?: string[];
   completedAt?: Date;
   lastEditedAt?: Date;
   deletedAt?: Date;
