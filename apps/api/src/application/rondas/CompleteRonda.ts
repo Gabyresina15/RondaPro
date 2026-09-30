@@ -36,22 +36,27 @@ export class CompleteRonda {
         const answer = ronda.answers.find((a) => a.itemIndex === index);
         if (answer?.naValue) continue;
         if (item.type === 'bool' && answer?.boolValue === undefined) {
-          throw new RondaCompletionError(`Falta el check obligatorio: ${item.label}`);
+          throw new RondaCompletionError(
+            `Falta el check obligatorio: ${item.label}`,
+          );
         }
         if (item.type === 'text' && !(answer?.textValue ?? '').trim()) {
-          throw new RondaCompletionError(`Falta la nota obligatoria: ${item.label}`);
+          throw new RondaCompletionError(
+            `Falta la nota obligatoria: ${item.label}`,
+          );
         }
       }
     }
 
     const findings = mergeAutoFindings(ronda);
     const forSummary = { ...ronda, findings };
+    const started = Date.now();
     const generated = await this.summaries.generate(forSummary);
     const completed = await this.rondas.complete(id, ownerId, {
       summary: generated.text,
       summarySource: generated.source,
       summaryModel: generated.model,
-      summaryLatencyMs: generated.latencyMs,
+      summaryLatencyMs: generated.latencyMs ?? Date.now() - started,
       summaryRisk: generated.risk,
       summaryKeyFindings: generated.keyFindings,
       summaryActions: generated.actions,
@@ -68,9 +73,15 @@ export class CompleteRonda {
 function mergeAutoFindings(ronda: Ronda): Finding[] {
   const findings = [...ronda.findings];
   for (const answer of ronda.answers) {
-    if (answer.naValue || answer.type !== 'bool' || answer.boolValue !== false) continue;
-    const already = findings.some((f) => f.itemIndex === answer.itemIndex && f.status === 'open');
-    if (already) continue;
+    if (answer.type !== 'bool' || answer.boolValue !== false) {
+      continue;
+    }
+    const already = findings.some(
+      (f) => f.itemIndex === answer.itemIndex && f.status === 'open',
+    );
+    if (already) {
+      continue;
+    }
     findings.push({
       id: randomUUID(),
       title: `Check fallido: ${answer.label}`,

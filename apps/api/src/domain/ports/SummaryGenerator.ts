@@ -3,8 +3,8 @@ import type { Ronda } from '../entities/Ronda.js';
 export interface GeneratedSummary {
   text: string;
   source: 'llm' | 'heuristic';
-  latencyMs?: number;
   model?: string;
+  latencyMs?: number;
   risk?: string;
   keyFindings?: string[];
   actions?: string[];

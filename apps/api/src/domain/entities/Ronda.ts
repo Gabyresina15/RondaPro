@@ -55,9 +55,9 @@ export interface Ronda {
   summaryRisk?: string;
   summaryKeyFindings?: string[];
   summaryActions?: string[];
-  completedAt?: Date;
   lastEditedAt?: Date;
   deletedAt?: Date;
+  completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
