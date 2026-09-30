@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../core/config/app_config.dart';
 import '../domain/ronda.dart';
 import 'demo_photos.dart';
+import 'photo_thumb.dart';
 import 'display_format.dart';
 import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
@@ -352,6 +353,20 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
             if (answer.type == 'photo') ...[
               Text(
                 'Fotos de este ítem: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _ronda.photos
+                    .where((p) => p.itemIndex == answer.itemIndex)
+                    .map(
+                      (photo) => PhotoThumb(
+                        rondaId: _ronda.id,
+                        photo: photo,
+                      ),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
