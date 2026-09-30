@@ -4,8 +4,25 @@ import type { PhotoStorage } from '../../domain/ports/PhotoStorage.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
+const WIN_ANSI: Record<string, string> = {
+  '\u2014': '\x97',
+  '\u2013': '\x96',
+  '\u201C': '\x93',
+  '\u201D': '\x94',
+  '\u2018': '\x91',
+  '\u2019': '\x92',
+  '\u2026': '\x85',
+  '\u20AC': '\x80',
+  '\u2022': '\x95',
+};
+
 function escapePdf(text: string): string {
-  return text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  return text
+    .replace(/[\u2014\u2013\u201C\u201D\u2018\u2019\u2026\u20AC\u2022]/g, (c) => WIN_ANSI[c] ?? '?')
+    .replace(/[^\x00-\xFF]/g, '?')
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)');
 }
 
 function formatAr(date?: Date): string {
@@ -101,9 +118,18 @@ function headerLines(ronda: Ronda): string[] {
     '',
     '1. RESUMEN',
     executiveOnly(ronda.summary),
-    '',
-    '2. HALLAZGOS',
   ];
+  const findings = ronda.summaryKeyFindings ?? [];
+  const actions = ronda.summaryActions ?? [];
+  if (findings.length) {
+    lines.push('', 'Hallazgos clave:');
+    for (const item of findings) lines.push(`- ${item}`);
+  }
+  if (actions.length) {
+    lines.push('', 'Acciones recomendadas:');
+    actions.forEach((item, i) => lines.push(`${i + 1}. ${item}`));
+  }
+  lines.push('', '2. HALLAZGOS');
   if (!ronda.findings.length) lines.push('No se registraron hallazgos.');
   else {
     for (const f of ronda.findings) {
@@ -111,13 +137,16 @@ function headerLines(ronda: Ronda): string[] {
       lines.push(`- ${f.title} [${sev} / ${f.status === 'open' ? 'abierto' : 'cerrado'}]`);
     }
   }
-  lines.push('', '3. CHECKLIST');
+  return lines.flatMap((l) => wrap(l, 88));
+}
+
+function checklistLines(ronda: Ronda): string[] {
+  const lines = ['3. CHECKLIST'];
   for (const a of ronda.answers) {
     let value = '-';
     if (a.type === 'bool') {
       value = a.naValue ? 'N/A' : a.boolValue === true ? 'Pasa' : a.boolValue === false ? 'No pasa' : 'Sin responder';
-    }
-    else if (a.type === 'text') value = a.textValue?.trim() || 'Sin notas';
+    } else if (a.type === 'text') value = a.textValue?.trim() || 'Sin notas';
     else value = 'Evidencia fotográfica';
     lines.push(`- ${a.label}: ${value}`);
   }
@@ -153,11 +182,15 @@ export class ExportRondaPdf {
         /* skip */
       }
     }
-    return { bytes: this.build(headerLines(ronda), images), filename: `rondapro-${ronda.id.slice(-6)}.pdf` };
+    return {
+      bytes: this.build(headerLines(ronda), checklistLines(ronda), images),
+      filename: `rondapro-${ronda.id.slice(-6)}.pdf`,
+    };
   }
 
   private build(
     lines: string[],
+    checklist: string[],
     images: { bytes: Buffer; width: number; height: number; caption: string }[],
   ): Buffer {
     type Part = { text?: string; binary?: Buffer };
@@ -206,6 +239,13 @@ export class ExportRondaPdf {
     const leftoverLines = leftover.length ? leftover : firstImage ? [] : headerChunk;
     for (let i = 0; i < leftoverLines.length; i += 46) {
       const stream = textStream(leftoverLines.slice(i, i + 46));
+      const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
+      const pageId = push([{ text: 'P' }]);
+      refs.push(pageId);
+      pages.push({ pageId, contentId, imageId: null });
+    }
+    for (let i = 0; i < checklist.length; i += 46) {
+      const stream = textStream(checklist.slice(i, i + 46));
       const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
       const pageId = push([{ text: 'P' }]);
       refs.push(pageId);
