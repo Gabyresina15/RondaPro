@@ -13,10 +13,10 @@ Ritmo: pausas cortas (0.4–0.8 s) en cada pantalla nueva; no correr el mouse.
 2. Usuarios:
    - `demo@rondapro.local` / `Demo1234!` (auditor)
    - `supervisor@rondapro.local` / `Demo1234!` (supervisor)
-3. Sitio seed: `Store 12 — Palermo`.
+3. Sitio seed: `Sucursal 12 — Palermo`.
 4. Flutter **con** `DEMO_MODE=true` (el default es `false`; sin esto no aparece **Adjuntar fotos**):
    ```bash
-   flutter run -d chrome --web-renderer html \
+   flutter run -d chrome \
      --dart-define=API_BASE_URL=http://127.0.0.1:3000 \
      --dart-define=DEMO_MODE=true
    ```
@@ -34,7 +34,7 @@ Usá captions. Texto exacto por escena, abajo.
 | Ítem | Tipo | Obligatorio | Resultado |
 |---|---|---|---|
 | Entrada libre y limpia | Pasa/Falla | sí | **Pasa** |
-| Notas de góndola | Texto | no | `Gondola de bebidas incompleta en cabecera` |
+| Notas de góndola | Texto | no | `Góndola de bebidas incompleta en cabecera` |
 | Foto de display promo | Foto | sí | 1 foto (display) |
 | Foto de extintor | Foto | sí | 1 foto (extintor) |
 | Salida de emergencia despejada | Pasa/Falla | sí | **Falla** |
@@ -42,14 +42,14 @@ Usá captions. Texto exacto por escena, abajo.
 Hallazgos visibles al completar:
 
 1. Manual: **Extintor vencido** · gravedad **Alta** · abierto.  
-   Notas: `Fecha de recarga 03/2024. Colocado detras de cajas.`
+   Notas: `Fecha de recarga 03/2024. Colocado detrás de cajas.`
 2. Automático (el backend lo crea al fallar un bool):  
    **Check fallido: Salida de emergencia despejada** · gravedad **Media** · abierto.
 
 Resumen:
 
-- Con key: caption `Resumen IA · Gemini · gemini-2.5-flash · {N}ms`
-- Fallback: caption `Resumen automático · heurístico`
+- Con key: caption `Gemini · gemini-2.5-flash · {N} ms`
+- Fallback: caption `Heurístico · Gemini no disponible`
 
 ---
 
@@ -63,10 +63,10 @@ Features opcionales en este corte: **PDF sí**. Supervisor/orden/notificaciones/
 |---|---|---|---|---|
 | 1 | 0:00–0:08 | Login | Email ya viene precargado. Click **Entrar**. Esperar Home. | `RondaPro · auditorias de piso retail` |
 | 2 | 0:08–0:16 | Plantillas | Click **Nueva plantilla**. | `Plantilla reutilizable para el equipo` |
-| 3 | 0:16–0:38 | Nueva plantilla | Nombre: `Ronda de piso retail`. Descripción: `Walkthrough diario sucursal`. Reemplazá el ítem default y dejá exactamente estos 5 (en este orden): 1. `Entrada libre y limpia` · Pasa/Falla · obligatorio. 2. `Notas de gondola` · Texto · no obligatorio. 3. `Foto de display promo` · Foto · obligatorio. 4. `Foto de extintor` · Foto · obligatorio. 5. `Salida de emergencia despejada` · Pasa/Falla · obligatorio. Guardar. | `Checklist con texto, pasa/falla y foto` |
-| 4 | 0:38–0:46 | Lista de plantillas | Click en `Ronda de piso retail`. En el diálogo: sitio `Store 12 — Palermo`. Nota de ubicación: `Pasillo 4 / deposito`. Click **Empezar**. | `Sitio + nota de ubicacion` |
-| 5 | 0:46–1:08 | Inspección | SegmentedButton **Entrada libre y limpia** → **Pasa**. En Notas de góndola escribí `Gondola de bebidas incompleta en cabecera`. Click **Adjuntar fotos** (aparece porque `DEMO_MODE=true`). Click **Agregar hallazgo**. Título: `Extintor vencido`. Notas: `Fecha de recarga 03/2024. Colocado detras de cajas.` Gravedad: **Alta**. Guardar. SegmentedButton **Salida de emergencia despejada** → **Falla**. | `2 evidencias + 1 hallazgo de alta` |
-| 6 | 1:08–1:18 | Inspección → Detalle | Click **Completar ronda**. La pantalla de detalle aparece de inmediato: la tarjeta de resumen muestra skeleton + “Gemini está armando el resumen”. Cuando llega la respuesta, el skeleton se reemplaza por el chip **ALTO** + acciones numeradas + caption `Gemini · gemini-2.5-flash · {N}ms`. | caption de resumen (IA o heurístico, según key) |
+| 3 | 0:16–0:38 | Nueva plantilla | Nombre: `Ronda de piso retail`. Descripción: `Ronda diaria de sucursal`. Reemplazá el ítem default y dejá exactamente estos 5 (en este orden): 1. `Entrada libre y limpia` · Pasa/Falla · obligatorio. 2. `Notas de góndola` · Texto · no obligatorio. 3. `Foto de display promo` · Foto · obligatorio. 4. `Foto de extintor` · Foto · obligatorio. 5. `Salida de emergencia despejada` · Pasa/Falla · obligatorio. Guardar. | `Checklist con texto, pasa/falla y foto` |
+| 4 | 0:38–0:46 | Lista de plantillas | Click en `Ronda de piso retail`. En el diálogo: sitio `Sucursal 12 — Palermo`. Nota de ubicación: `Pasillo 4 / depósito`. Click **Empezar**. | `Sitio + nota de ubicación` |
+| 5 | 0:46–1:08 | Inspección | SegmentedButton **Entrada libre y limpia** → **Pasa**. En Notas de góndola escribí `Góndola de bebidas incompleta en cabecera`. Click **Adjuntar fotos** (aparece porque `DEMO_MODE=true`). Click **Agregar hallazgo**. Título: `Extintor vencido`. Notas: `Fecha de recarga 03/2024. Colocado detrás de cajas.` Gravedad: **Alta**. Guardar. SegmentedButton **Salida de emergencia despejada** → **Falla**. | `2 evidencias + 1 hallazgo de alta` |
+| 6 | 1:08–1:18 | Inspección → Detalle | Click **Completar ronda**. La pantalla de detalle aparece de inmediato: la tarjeta de resumen muestra skeleton + “Gemini está armando el resumen”. Cuando llega la respuesta, el skeleton se reemplaza por el chip **ALTO** + acciones numeradas + caption `Gemini · gemini-2.5-flash · {N} ms`. | caption de resumen (IA o heurístico, según key) |
 | 7 | 1:18–1:28 | Detalle | Click ícono PDF en el AppBar. En web se descarga el PDF. Mostralo 2 s. | `PDF con fotos y caption por item` |
 | 8 | 1:28–1:30 | Detalle | Hold 1 s. Frame final. | `RondaPro · inspeccion lista para el supervisor` |
 
@@ -82,7 +82,7 @@ Mismo resultado de ronda. Extra: orden + notificación + panel.
 |---|---|---|---|---|---|
 | 1 | 0:00–0:08 | supervisor | Login | Cambiá el email a `supervisor@rondapro.local`, misma password, **Entrar**. | `Rol supervisor` |
 | 2 | 0:08–0:22 | supervisor | Plantillas | Si no existe `Ronda de piso retail`, creala igual que en el corte A (comprimí ítems). Si ya existe, no la recréis. | `Misma plantilla para todo el equipo` |
-| 3 | 0:22–0:32 | supervisor | Plantillas | Ícono de orden (assignment) en la card. Sitio `Store 12 — Palermo`. Auditor `Demo Auditor`. Nota `Pasillo 4 / deposito`. **Enviar orden**. | `Orden de inspeccion al auditor` |
+| 3 | 0:22–0:32 | supervisor | Plantillas | Ícono de orden (assignment) en la card. Sitio `Sucursal 12 — Palermo`. Auditor `Demo Auditor`. Nota `Pasillo 4 / depósito`. **Enviar orden**. | `Orden de inspección al auditor` |
 | 4 | 0:32–0:38 | supervisor | AppBar | Campana de notificaciones. Mostrar la orden. Volver. | `El auditor recibe la orden` |
 | 5 | 0:38–0:46 | — | Login | Salir. Entrar como `demo@rondapro.local`. | `Cambio a auditor` |
 | 6 | 0:46–0:52 | auditor | Historial | Abrir la ronda `in_progress` asignada. | `Ronda asignada, lista para ejecutar` |
@@ -98,31 +98,31 @@ Mismo resultado de ronda. Extra: orden + notificación + panel.
 ```
 Plantilla
   Ronda de piso retail
-  Walkthrough diario sucursal
+  Ronda diaria de sucursal
 
 Ítems
   Entrada libre y limpia          Pasa/Falla   obligatorio
-  Notas de gondola                Texto        no
+  Notas de góndola                Texto        no
   Foto de display promo           Foto         obligatorio
   Foto de extintor                Foto         obligatorio
   Salida de emergencia despejada  Pasa/Falla   obligatorio
 
 Sitio
-  Store 12 — Palermo
+  Sucursal 12 — Palermo
 
 Nota de ubicación
-  Pasillo 4 / deposito
+  Pasillo 4 / depósito
 
 Notas de góndola
-  Gondola de bebidas incompleta en cabecera
+  Góndola de bebidas incompleta en cabecera
 
 Hallazgo
   Extintor vencido
-  Fecha de recarga 03/2024. Colocado detras de cajas.
+  Fecha de recarga 03/2024. Colocado detrás de cajas.
   Alta
 ```
 
-Acentos: la UI está en español, pero el PDF dobla a ASCII (`gondola`, `deposito`). Escribí sin tildes en los campos libres para que el PDF y la UI coincidan en el video.
+Acentos: UI y PDF usan tildes y el guion largo (`Sucursal 12 — Palermo`). El PDF va con WinAnsi + hora ART.
 
 ---
 
