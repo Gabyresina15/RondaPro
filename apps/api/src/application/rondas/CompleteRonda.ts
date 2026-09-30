@@ -34,6 +34,7 @@ export class CompleteRonda {
       for (const [index, item] of template.items.entries()) {
         if (!item.required || item.type === 'photo') continue;
         const answer = ronda.answers.find((a) => a.itemIndex === index);
+        if (answer?.naValue) continue;
         if (item.type === 'bool' && answer?.boolValue === undefined) {
           throw new RondaCompletionError(`Falta el check obligatorio: ${item.label}`);
         }
@@ -67,7 +68,7 @@ export class CompleteRonda {
 function mergeAutoFindings(ronda: Ronda): Finding[] {
   const findings = [...ronda.findings];
   for (const answer of ronda.answers) {
-    if (answer.type !== 'bool' || answer.boolValue !== false) continue;
+    if (answer.naValue || answer.type !== 'bool' || answer.boolValue !== false) continue;
     const already = findings.some((f) => f.itemIndex === answer.itemIndex && f.status === 'open');
     if (already) continue;
     findings.push({
