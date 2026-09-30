@@ -81,7 +81,7 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: note,
-                  decoration: const InputDecoration(labelText: 'Nota de resoluci\u00f3n'),
+                  decoration: const InputDecoration(labelText: 'Nota de resolución'),
                   minLines: 2,
                   maxLines: 4,
                 ),
@@ -123,6 +123,13 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
         bytes: bytes,
         rondaId: _ronda.id,
         text: _ronda.templateName,
+      );
+      if (!mounted) return;
+      final shortId = _ronda.id.length > 6
+          ? _ronda.id.substring(_ronda.id.length - 6)
+          : _ronda.id;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF descargado · rondapro-$shortId.pdf')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -192,7 +199,7 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
                           Text('Asignado: ${f.assignee}'),
                         if (f.notes.isNotEmpty) Text(f.notes),
                         if ((f.resolutionNote ?? '').isNotEmpty)
-                          Text('Resoluci\u00f3n: ${f.resolutionNote}'),
+                          Text('Resolución: ${f.resolutionNote}'),
                       ],
                     ),
                   ),
@@ -243,7 +250,7 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
     if (answer.type == 'text') {
       return (answer.textValue ?? '').isEmpty ? 'Sin notas' : answer.textValue!;
     }
-    return '\u00cdtem de foto';
+    return 'Ítem de foto';
   }
 }
 
@@ -286,7 +293,7 @@ class _ScoreHeader extends StatelessWidget {
                       '${score.ok}/${score.applicable} OK',
                       '${score.percent}% cumplimiento',
                       if (score.na > 0) '${score.na} N/A',
-                    ].join(' \u00b7 '),
+                    ].join(' · '),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
@@ -295,7 +302,7 @@ class _ScoreHeader extends StatelessWidget {
                       ronda.isCompleted ? 'Completada' : 'En curso',
                       if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
                       if (ronda.location.isNotEmpty) ronda.location,
-                    ].join(' \u00b7 '),
+                    ].join(' · '),
                   ),
                   if (ronda.completedAt != null)
                     Text('Finalizada ${formatDateTimeEs(ronda.completedAt!)}'),
@@ -318,11 +325,20 @@ class _AiSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final risk = formatRisk(parsed.risk);
     final color = riskColor(parsed.risk);
+    final model = (ronda.summaryModel ?? '').trim();
+    final unavailable = model == 'gemini-unavailable';
+    final showModel = ronda.summarySource == 'llm' &&
+        model.isNotEmpty &&
+        model.toLowerCase() != 'heuristic' &&
+        !unavailable;
     final bits = <String>[
-      if (ronda.summarySource == 'llm') 'Gemini' else 'Heur\u00edstico',
-      if ((ronda.summaryModel ?? '').isNotEmpty) ronda.summaryModel!,
-      if (ronda.summaryLatencyMs != null && ronda.summaryLatencyMs! > 0)
-        '${ronda.summaryLatencyMs}ms',
+      if (ronda.summarySource == 'llm') 'Gemini' else 'Heurístico',
+      if (unavailable) 'Gemini no disponible',
+      if (showModel) model,
+      if (ronda.summarySource == 'llm' &&
+          ronda.summaryLatencyMs != null &&
+          ronda.summaryLatencyMs! > 0)
+        '${ronda.summaryLatencyMs} ms',
     ];
     return Card(
       child: Padding(
@@ -355,7 +371,7 @@ class _AiSummaryCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    bits.join(' \u00b7 '),
+                    bits.join(' · '),
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
                 ),
@@ -374,7 +390,7 @@ class _AiSummaryCard extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('\u2022  '),
+                      const Text('•  '),
                       Expanded(child: Text(item)),
                     ],
                   ),
@@ -513,7 +529,7 @@ class _SummarySkeletonCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
-                    '\u2026',
+                    '…',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.6,
@@ -528,7 +544,7 @@ class _SummarySkeletonCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Gemini est\u00e1 armando el resumen',
+                  'Gemini está armando el resumen',
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
               ],
