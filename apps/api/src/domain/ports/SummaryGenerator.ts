@@ -5,6 +5,9 @@ export interface GeneratedSummary {
   source: 'llm' | 'heuristic';
   latencyMs?: number;
   model?: string;
+  risk?: string;
+  keyFindings?: string[];
+  actions?: string[];
 }
 
 export interface SummaryGenerator {

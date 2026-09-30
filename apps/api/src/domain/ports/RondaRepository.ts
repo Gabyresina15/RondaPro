@@ -15,6 +15,9 @@ export interface CompleteRondaInput {
   summarySource: 'llm' | 'heuristic';
   summaryModel?: string;
   summaryLatencyMs?: number;
+  summaryRisk?: string;
+  summaryKeyFindings?: string[];
+  summaryActions?: string[];
   completedAt: Date;
   findings?: Finding[];
 }
