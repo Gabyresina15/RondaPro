@@ -129,7 +129,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                 children: [
                   TextField(
                     controller: title,
-                    decoration: const InputDecoration(labelText: 'T\u00edtulo'),
+                    decoration: const InputDecoration(labelText: 'Título'),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -223,12 +223,12 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
               if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
               if (ronda.location.isNotEmpty) ronda.location,
               if ((ronda.siteName ?? '').isEmpty && ronda.location.isEmpty)
-                'Sin ubicaci\u00f3n',
-            ].join(' \u00b7 '),
+                'Sin ubicación',
+            ].join(' · '),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Text('${ronda.photos.length} foto(s) \u00b7 opcionales'),
+          Text('${ronda.photos.length} foto(s) · opcionales'),
           const SizedBox(height: 16),
           ..._answers.map(_answerCard),
           const SizedBox(height: 8),
@@ -242,7 +242,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                 ),
                 title: Text(f.title),
                 subtitle: Text(
-                  '${formatSeverity(f.severity)} \u00b7 ${formatFindingStatus(f.status)}',
+                  '${formatSeverity(f.severity)} · ${formatFindingStatus(f.status)}',
                 ),
               ),
             ),
@@ -288,6 +288,15 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
             if (answer.type == 'bool')
               SegmentedButton<String>(
                 emptySelectionAllowed: true,
+                showSelectedIcon: false,
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: answer.naValue
+                      ? const Color(0xFF475467)
+                      : answer.boolValue == true
+                          ? const Color(0xFF027A48)
+                          : const Color(0xFFB42318),
+                  selectedForegroundColor: Colors.white,
+                ),
                 segments: const [
                   ButtonSegment(value: 'pass', label: Text('Pasa'), icon: Icon(Icons.check)),
                   ButtonSegment(value: 'fail', label: Text('Falla'), icon: Icon(Icons.close)),
@@ -342,7 +351,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
               ),
             if (answer.type == 'photo') ...[
               Text(
-                'Fotos de este \u00edtem: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
+                'Fotos de este ítem: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
