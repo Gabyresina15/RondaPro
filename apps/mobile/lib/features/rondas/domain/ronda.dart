@@ -134,6 +134,8 @@ class Ronda {
     this.findings = const [],
     this.summary,
     this.summarySource,
+    this.summaryModel,
+    this.summaryLatencyMs,
     this.completedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -152,6 +154,8 @@ class Ronda {
   final List<RondaFinding> findings;
   final String? summary;
   final String? summarySource;
+  final String? summaryModel;
+  final int? summaryLatencyMs;
   final DateTime? completedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -179,6 +183,10 @@ class Ronda {
           .toList(),
       summary: json['summary'] as String?,
       summarySource: json['summarySource'] as String?,
+      summaryModel: json['summaryModel'] as String?,
+      summaryLatencyMs: json['summaryLatencyMs'] is int
+          ? json['summaryLatencyMs'] as int
+          : int.tryParse('${json['summaryLatencyMs'] ?? ''}'),
       completedAt: json['completedAt'] == null
           ? null
           : DateTime.parse(json['completedAt'] as String),
