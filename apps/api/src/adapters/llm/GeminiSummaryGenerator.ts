@@ -50,7 +50,8 @@ function rondaPayload(ronda: Ronda) {
       etiqueta: a.label,
       tipo: a.type,
       texto: a.textValue ?? null,
-      pasa: a.boolValue ?? null,
+      pasa: a.naValue ? null : a.boolValue ?? null,
+      na: Boolean(a.naValue),
     })),
     hallazgos: ronda.findings.map((f) => ({
       titulo: f.title,

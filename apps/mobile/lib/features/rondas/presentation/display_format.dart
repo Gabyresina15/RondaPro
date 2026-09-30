@@ -88,17 +88,29 @@ Color severityColor(String raw) {
 }
 
 class RondaScore {
-  const RondaScore({required this.ok, required this.total});
+  const RondaScore({
+    required this.ok,
+    required this.applicable,
+    required this.na,
+  });
   final int ok;
-  final int total;
-  int get percent => total == 0 ? 0 : ((ok / total) * 100).round();
+  final int applicable;
+  final int na;
+  int get total => applicable;
+  int get percent =>
+      applicable == 0 ? 0 : ((ok / applicable) * 100).round();
 }
 
 RondaScore scoreOf(Ronda ronda) {
   var ok = 0;
-  var total = 0;
+  var applicable = 0;
+  var na = 0;
   for (final answer in ronda.answers) {
-    total += 1;
+    if (answer.naValue) {
+      na += 1;
+      continue;
+    }
+    applicable += 1;
     if (answer.type == 'bool' && answer.boolValue == true) ok += 1;
     if (answer.type == 'text' && (answer.textValue ?? '').trim().isNotEmpty) {
       ok += 1;
@@ -108,7 +120,7 @@ RondaScore scoreOf(Ronda ronda) {
       ok += 1;
     }
   }
-  return RondaScore(ok: ok, total: total);
+  return RondaScore(ok: ok, applicable: applicable, na: na);
 }
 
 class ParsedSummary {
