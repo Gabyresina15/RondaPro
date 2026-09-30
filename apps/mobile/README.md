@@ -27,14 +27,14 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.10:3000
 ```bash
 cd apps/mobile
 flutter pub get
-flutter run
+flutter run --dart-define=DEMO_MODE=true
 ```
 
 Demo credentials (after API seed): `demo@rondapro.local` / `Demo1234!`
 
 Flow: login → Templates tab → tap a template → fill answers → add photos (camera or **Adjuntar fotos** when `DEMO_MODE=true`) → Complete ronda → summary → Historial tab.
 
-`DEMO_MODE` defaults to `true`. Hide the shortcut with `--dart-define=DEMO_MODE=false`.
+`DEMO_MODE` defaults to `false`. Show the attach shortcut with `--dart-define=DEMO_MODE=true`.
 
 ## Platform scaffolding
 
