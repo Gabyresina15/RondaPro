@@ -83,17 +83,19 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
         .toList();
     final first = photoIndexes.isNotEmpty ? photoIndexes.first : 0;
     final second = photoIndexes.length > 1 ? photoIndexes[1] : first;
+    final display = await loadDemoJpegBase64('display-promo');
+    final ext = await loadDemoJpegBase64('extintor');
     final ok = await context.read<RondasController>().addPhotos([
       {
         'filename': 'display-promo.jpg',
         'mimeType': 'image/jpeg',
-        'dataBase64': demoJpegDisplayBase64,
+        'dataBase64': display,
         'itemIndex': first,
       },
       {
         'filename': 'extintor.jpg',
         'mimeType': 'image/jpeg',
-        'dataBase64': demoJpegExtinguisherBase64,
+        'dataBase64': ext,
         'itemIndex': second,
       },
     ]);
@@ -189,24 +191,17 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
   Future<void> _complete() async {
     setState(() => _busy = true);
     await _persistAnswers();
-    final completed = await context.read<RondasController>().complete();
     if (!mounted) {
       return;
     }
-    setState(() => _busy = false);
-    if (completed == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.read<RondasController>().error ?? 'No se pudo completar la ronda',
-          ),
-        ),
-      );
-      return;
-    }
+    final current =
+        context.read<RondasController>().current ?? widget.ronda;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => RondaDetailScreen(ronda: completed),
+        builder: (_) => RondaDetailScreen(
+          ronda: current,
+          generateSummary: true,
+        ),
       ),
     );
   }
@@ -246,7 +241,9 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                   f.isOpen ? Icons.report_outlined : Icons.check,
                 ),
                 title: Text(f.title),
-                subtitle: Text('${formatSeverity(f.severity)} \u00b7 ${f.status}'),
+                subtitle: Text(
+                  '${formatSeverity(f.severity)} \u00b7 ${formatFindingStatus(f.status)}',
+                ),
               ),
             ),
           ],
@@ -289,16 +286,42 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
             Text(answer.label, style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             if (answer.type == 'bool')
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(answer.boolValue == true ? 'Pasa' : 'Pendiente / falla'),
-                value: answer.boolValue ?? false,
-                onChanged: _busy
+              SegmentedButton<String>(
+                emptySelectionAllowed: true,
+                segments: const [
+                  ButtonSegment(value: 'pass', label: Text('Pasa'), icon: Icon(Icons.check)),
+                  ButtonSegment(value: 'fail', label: Text('Falla'), icon: Icon(Icons.close)),
+                  ButtonSegment(value: 'na', label: Text('N/A')),
+                ],
+                selected: {
+                  if (answer.naValue)
+                    'na'
+                  else if (answer.boolValue == true)
+                    'pass'
+                  else if (answer.boolValue == false)
+                    'fail',
+                },
+                onSelectionChanged: _busy
                     ? null
                     : (value) {
+                        final picked = value.isEmpty ? '' : value.first;
                         setState(() {
-                          _answers[answer.itemIndex] =
-                              answer.copyWith(boolValue: value);
+                          if (picked == 'na') {
+                            _answers[answer.itemIndex] = answer.copyWith(
+                              clearBool: true,
+                              naValue: true,
+                            );
+                          } else if (picked == 'pass' || picked == 'fail') {
+                            _answers[answer.itemIndex] = answer.copyWith(
+                              boolValue: picked == 'pass',
+                              naValue: false,
+                            );
+                          } else {
+                            _answers[answer.itemIndex] = answer.copyWith(
+                              clearBool: true,
+                              naValue: false,
+                            );
+                          }
                         });
                         _persistAnswers();
                       },
