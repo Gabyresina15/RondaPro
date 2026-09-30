@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../core/config/app_config.dart';
 import '../domain/ronda.dart';
 import 'demo_photos.dart';
+import 'display_format.dart';
 import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
 
@@ -126,7 +127,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                 children: [
                   TextField(
                     controller: title,
-                    decoration: const InputDecoration(labelText: 'Título'),
+                    decoration: const InputDecoration(labelText: 'T\u00edtulo'),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -227,12 +228,12 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
               if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
               if (ronda.location.isNotEmpty) ronda.location,
               if ((ronda.siteName ?? '').isEmpty && ronda.location.isEmpty)
-                'Sin ubicación',
-            ].join(' · '),
+                'Sin ubicaci\u00f3n',
+            ].join(' \u00b7 '),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Text('${ronda.photos.length} foto(s) · opcionales'),
+          Text('${ronda.photos.length} foto(s) \u00b7 opcionales'),
           const SizedBox(height: 16),
           ..._answers.map(_answerCard),
           const SizedBox(height: 8),
@@ -245,7 +246,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
                   f.isOpen ? Icons.report_outlined : Icons.check,
                 ),
                 title: Text(f.title),
-                subtitle: Text('${f.severity} · ${f.status}'),
+                subtitle: Text('${formatSeverity(f.severity)} \u00b7 ${f.status}'),
               ),
             ),
           ],
@@ -318,7 +319,7 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
               ),
             if (answer.type == 'photo') ...[
               Text(
-                'Fotos de este ítem: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
+                'Fotos de este \u00edtem: ${_ronda.photos.where((p) => p.itemIndex == answer.itemIndex).length}',
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
