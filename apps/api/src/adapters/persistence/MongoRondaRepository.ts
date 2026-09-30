@@ -26,6 +26,9 @@ function toDomain(doc: RondaDocument): Ronda {
     assigneeName?: string;
     summaryModel?: string;
     summaryLatencyMs?: number;
+    summaryRisk?: string;
+    summaryKeyFindings?: string[];
+    summaryActions?: string[];
     lastEditedAt?: Date;
     deletedAt?: Date;
   };
@@ -46,6 +49,7 @@ function toDomain(doc: RondaDocument): Ronda {
       type: a.type as RondaAnswer['type'],
       textValue: a.textValue ?? undefined,
       boolValue: a.boolValue ?? undefined,
+      naValue: (a as { naValue?: boolean }).naValue ?? undefined,
     })),
     photos: doc.photos.map((p) => ({
       id: p.id,
@@ -72,6 +76,9 @@ function toDomain(doc: RondaDocument): Ronda {
     summarySource: (doc.summarySource as Ronda['summarySource']) ?? undefined,
     summaryModel: extra.summaryModel,
     summaryLatencyMs: extra.summaryLatencyMs,
+    summaryRisk: extra.summaryRisk,
+    summaryKeyFindings: extra.summaryKeyFindings,
+    summaryActions: extra.summaryActions,
     completedAt: doc.completedAt ?? undefined,
     lastEditedAt: extra.lastEditedAt,
     deletedAt: extra.deletedAt,
@@ -215,6 +222,9 @@ export class MongoRondaRepository implements RondaRepository {
       summarySource: input.summarySource,
       summaryModel: input.summaryModel,
       summaryLatencyMs: input.summaryLatencyMs,
+      summaryRisk: input.summaryRisk,
+      summaryKeyFindings: input.summaryKeyFindings,
+      summaryActions: input.summaryActions,
       completedAt: input.completedAt,
     };
     if (input.findings) set.findings = input.findings;
