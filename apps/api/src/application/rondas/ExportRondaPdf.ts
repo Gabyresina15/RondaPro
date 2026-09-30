@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import type { Ronda } from '../../domain/entities/Ronda.js';
 import type { PhotoStorage } from '../../domain/ports/PhotoStorage.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
@@ -100,7 +101,8 @@ function headerLines(ronda: Ronda): string[] {
   if (!ronda.findings.length) lines.push('No se registraron hallazgos.');
   else {
     for (const f of ronda.findings) {
-      lines.push(`- ${f.title} [${f.severity} / ${f.status === 'open' ? 'abierto' : 'cerrado'}]`);
+      const sev = f.severity === 'high' ? 'Alta' : f.severity === 'medium' ? 'Media' : f.severity === 'low' ? 'Baja' : f.severity;
+      lines.push(`- ${f.title} [${sev} / ${f.status === 'open' ? 'abierto' : 'cerrado'}]`);
     }
   }
   lines.push('', '3. CHECKLIST');
@@ -143,11 +145,10 @@ export class ExportRondaPdf {
         /* skip */
       }
     }
-    return { bytes: this.build(ronda, headerLines(ronda), images), filename: `rondapro-${ronda.id.slice(-6)}.pdf` };
+    return { bytes: this.build(headerLines(ronda), images), filename: `rondapro-${ronda.id.slice(-6)}.pdf` };
   }
 
   private build(
-    ronda: Ronda,
     lines: string[],
     images: { bytes: Buffer; width: number; height: number; caption: string }[],
   ): Buffer {
