@@ -68,24 +68,32 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
   async generate(ronda: Ronda): Promise<GeneratedSummary> {
     const models = uniqueModels(this.config.model);
     let lastError = 'Gemini request failed';
+    const deadline = Date.now() + 8_000;
+    const startedAll = Date.now();
 
     for (const model of models) {
       for (const withSchema of [true, false]) {
-        const started = Date.now();
+        const remaining = deadline - Date.now();
+        if (remaining <= 250) {
+          throw new Error(lastError || 'Gemini deadline');
+        }
         try {
-          const raw = await this.callModel(model, ronda, withSchema);
+          const raw = await this.callModel(model, ronda, withSchema, remaining);
           const structured = parseStructuredSummary(raw);
           return {
             text: formatStructuredSummary(structured),
             source: 'llm',
             model,
-            latencyMs: Date.now() - started,
+            latencyMs: Date.now() - startedAll,
             risk: structured.nivel_de_riesgo,
             keyFindings: structured.hallazgos_clave,
             actions: structured.acciones_recomendadas,
           };
         } catch (err) {
           lastError = err instanceof Error ? err.message : String(err);
+          if (/\b429\b/.test(lastError)) {
+            break;
+          }
         }
       }
     }
@@ -97,6 +105,7 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
     model: string,
     ronda: Ronda,
     withSchema: boolean,
+    timeoutMs: number,
   ): Promise<string> {
     const base =
       this.config.baseUrl?.replace(/\/$/, '') ??
@@ -114,7 +123,10 @@ export class GeminiSummaryGenerator implements SummaryGenerator {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45_000);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      Math.max(250, Math.min(45_000, timeoutMs)),
+    );
 
     try {
       const response = await fetch(url, {
