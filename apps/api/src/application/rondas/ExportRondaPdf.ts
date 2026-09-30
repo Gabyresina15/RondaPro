@@ -4,24 +4,29 @@ import type { PhotoStorage } from '../../domain/ports/PhotoStorage.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
-function foldAscii(text: string): string {
-  return text
-    .replace(/[\u00e1\u00e0\u00e4\u00e2]/g, 'a')
-    .replace(/[\u00e9\u00e8\u00eb\u00ea]/g, 'e')
-    .replace(/[\u00ed\u00ec\u00ef\u00ee]/g, 'i')
-    .replace(/[\u00f3\u00f2\u00f6\u00f4]/g, 'o')
-    .replace(/[\u00fa\u00f9\u00fc\u00fb]/g, 'u')
-    .replace(/[\u00c1\u00c0\u00c4\u00c2]/g, 'A')
-    .replace(/[\u00c9\u00c8\u00cb\u00ca]/g, 'E')
-    .replace(/[\u00cd\u00cc\u00cf\u00ce]/g, 'I')
-    .replace(/[\u00d3\u00d2\u00d6\u00d4]/g, 'O')
-    .replace(/[\u00da\u00d9\u00dc\u00db]/g, 'U')
-    .replace(/\u00f1/g, 'n')
-    .replace(/\u00d1/g, 'N');
+function escapePdf(text: string): string {
+  return text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
 }
 
-function escapePdf(text: string): string {
-  return foldAscii(text).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+function formatAr(date?: Date): string {
+  if (!date) return '-';
+  const fmt = new Intl.DateTimeFormat('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return `${fmt.format(date)} ART`;
+}
+
+function executiveOnly(summary?: string): string {
+  const text = (summary ?? '').trim();
+  if (!text) return 'Sin resumen.';
+  const cut = text.search(/\n\s*Nivel de riesgo:/i);
+  return (cut > 0 ? text.slice(0, cut) : text).trim();
 }
 
 function wrap(text: string, width: number): string[] {
@@ -78,24 +83,24 @@ function textStream(lines: string[]): string {
 function headerLines(ronda: Ronda): string[] {
   const source =
     ronda.summarySource === 'llm'
-      ? `Gemini${ronda.summaryModel ? ` (${ronda.summaryModel})` : ''}${ronda.summaryLatencyMs != null ? ` ${ronda.summaryLatencyMs}ms` : ''}`
+      ? `Gemini${ronda.summaryModel && ronda.summaryModel !== 'heuristic' ? ` (${ronda.summaryModel})` : ''}${ronda.summaryLatencyMs != null ? ` ${ronda.summaryLatencyMs}ms` : ''}`
       : ronda.summarySource
-        ? 'Resumen automatico'
+        ? 'Resumen automático'
         : '-';
   const lines = [
     'RONDAPRO',
-    'Informe de inspeccion de campo',
+    'Informe de inspección de campo',
     '----------------------------------------------',
     `Plantilla: ${ronda.templateName}`,
     `Sitio: ${ronda.siteName || ronda.location || '-'}`,
     `Estado: ${ronda.status === 'completed' ? 'Completada' : 'En curso'}`,
-    `Cerrada: ${ronda.completedAt?.toISOString().slice(0, 16).replace('T', ' ') ?? '-'} UTC`,
-    `Editada: ${ronda.lastEditedAt?.toISOString().slice(0, 16).replace('T', ' ') ?? '-'} UTC`,
+    `Cerrada: ${formatAr(ronda.completedAt)}`,
+    `Editada: ${formatAr(ronda.lastEditedAt)}`,
     `Fuente: ${source}`,
     `Riesgo: ${ronda.summaryRisk ?? '-'}`,
     '',
     '1. RESUMEN',
-    ronda.summary?.trim() || 'Sin resumen.',
+    executiveOnly(ronda.summary),
     '',
     '2. HALLAZGOS',
   ];
@@ -113,7 +118,7 @@ function headerLines(ronda: Ronda): string[] {
       value = a.naValue ? 'N/A' : a.boolValue === true ? 'Pasa' : a.boolValue === false ? 'No pasa' : 'Sin responder';
     }
     else if (a.type === 'text') value = a.textValue?.trim() || 'Sin notas';
-    else value = 'Evidencia fotografica';
+    else value = 'Evidencia fotográfica';
     lines.push(`- ${a.label}: ${value}`);
   }
   return lines.flatMap((l) => wrap(l, 88));
@@ -165,14 +170,48 @@ export class ExportRondaPdf {
     push([{ text: 'PAGES' }]);
     const pages: { pageId: number; contentId: number; imageId: number | null }[] = [];
     const refs: number[] = [];
-    for (let i = 0; i < lines.length; i += 46) {
-      const stream = textStream(lines.slice(i, i + 46));
+    const firstImage = images[0];
+    const restImages = firstImage ? images.slice(1) : images;
+    const headerChunk = firstImage ? lines.slice(0, 22) : lines;
+    const leftover = firstImage ? lines.slice(22) : [];
+
+    if (firstImage) {
+      const imageId = push([
+        { text: `<< /Type /XObject /Subtype /Image /Width ${firstImage.width} /Height ${firstImage.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${firstImage.bytes.length} >>\nstream\n` },
+        { binary: firstImage.bytes },
+        { text: '\nendstream' },
+      ]);
+      const scale = Math.min(500 / firstImage.width, 320 / firstImage.height, 1);
+      const w = Math.round(firstImage.width * scale);
+      const h = Math.round(firstImage.height * scale);
+      const x = Math.round((612 - w) / 2);
+      const stream = [
+        textStream(headerChunk),
+        'BT',
+        '/F1 11 Tf',
+        '48 390 Td',
+        `(${escapePdf(firstImage.caption)}) Tj`,
+        'ET',
+        'q',
+        `${w} 0 0 ${h} ${x} 70 cm`,
+        `/Im${imageId} Do`,
+        'Q',
+      ].join('\n');
+      const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
+      const pageId = push([{ text: 'P' }]);
+      refs.push(pageId);
+      pages.push({ pageId, contentId, imageId });
+    }
+
+    const leftoverLines = leftover.length ? leftover : firstImage ? [] : headerChunk;
+    for (let i = 0; i < leftoverLines.length; i += 46) {
+      const stream = textStream(leftoverLines.slice(i, i + 46));
       const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
       const pageId = push([{ text: 'P' }]);
       refs.push(pageId);
       pages.push({ pageId, contentId, imageId: null });
     }
-    for (const image of images) {
+    for (const image of restImages) {
       const imageId = push([
         { text: `<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.bytes.length} >>\nstream\n` },
         { binary: image.bytes },
@@ -188,7 +227,7 @@ export class ExportRondaPdf {
       refs.push(pageId);
       pages.push({ pageId, contentId, imageId });
     }
-    const fontId = push([{ text: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>' }]);
+    const fontId = push([{ text: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>' }]);
     objs[1] = [{ text: `<< /Type /Pages /Kids [${refs.map((id) => `${id} 0 R`).join(' ')}] /Count ${refs.length} >>` }];
     for (const page of pages) {
       const xobj = page.imageId == null ? '' : ` /XObject << /Im${page.imageId} ${page.imageId} 0 R >>`;
