@@ -59,4 +59,5 @@ export interface RondaRepository {
     ownerId: string,
     input: CompleteRondaInput,
   ): Promise<Ronda | null>;
+  softDelete(id: string, ownerId: string): Promise<boolean>;
 }

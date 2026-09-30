@@ -45,7 +45,6 @@ export class StartRonda {
         itemIndex,
         label: item.label,
         type: item.type,
-        ...(item.type === 'bool' ? { boolValue: false } : {}),
       })),
     });
   }
