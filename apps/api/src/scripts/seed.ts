@@ -11,6 +11,8 @@ const DEMO_EMAIL = 'demo@rondapro.local';
 const DEMO_PASSWORD = 'Demo1234!';
 const DEMO_NAME = 'Demo Auditor';
 const SUPER_EMAIL = 'supervisor@rondapro.local';
+const SITE_NAME = 'Sucursal 12 — Palermo';
+const SITE_ALIASES = [SITE_NAME, 'Store 12 — Palermo'];
 
 async function seed(): Promise<void> {
   const config = loadConfig();
@@ -34,6 +36,10 @@ async function seed(): Promise<void> {
   } else {
     console.log(`Demo user already exists: ${DEMO_EMAIL}`);
   }
+  if (!user) {
+    throw new Error('No se pudo crear el usuario demo');
+  }
+  const demoUser = user;
 
   let supervisor = await users.findByEmail(SUPER_EMAIL);
   if (!supervisor) {
@@ -48,17 +54,17 @@ async function seed(): Promise<void> {
     console.log(`Supervisor already exists: ${SUPER_EMAIL}`);
   }
 
-  const existing = await templates.findByOwner(user.id);
+  const existing = await templates.findByOwner(demoUser.id);
   const retailName = 'Checklist de piso retail';
   let template = existing.find((t) => t.name === retailName);
   if (!template) {
     template = await templates.create({
-      ownerId: user.id,
+      ownerId: demoUser.id,
       name: retailName,
-      description: 'Walkthrough diario de sucursal: entrada, góndola, evidencias y salida.',
+      description: 'Ronda diaria de sucursal: entrada, góndola, evidencias y salida.',
       items: [
         { label: 'Entrada libre y limpia', required: true, type: 'bool' },
-        { label: 'Notas de gondola', required: false, type: 'text' },
+        { label: 'Notas de góndola', required: false, type: 'text' },
         { label: 'Foto de display promo', required: true, type: 'photo' },
         { label: 'Foto de extintor', required: true, type: 'photo' },
         { label: 'Salida de emergencia despejada', required: true, type: 'bool' },
@@ -68,22 +74,33 @@ async function seed(): Promise<void> {
   } else {
     console.log('Checklist de piso retail already exists');
   }
+  if (!template) {
+    throw new Error('No se pudo crear la plantilla demo');
+  }
+  const demoTemplate = template;
 
-  const existingSites = await sites.findByOwner(user.id);
-  if (!existingSites.some((s) => s.name === 'Store 12 — Palermo')) {
-    const site = await sites.create({
-      ownerId: user.id,
-      name: 'Store 12 — Palermo',
+  const existingSites = await sites.findByOwner(demoUser.id);
+  let site = existingSites.find((s) => SITE_ALIASES.includes(s.name));
+  if (!site) {
+    site = await sites.create({
+      ownerId: demoUser.id,
+      name: SITE_NAME,
       address: 'Av. Santa Fe 3200, CABA',
-      notes: 'Sucursal flagship. Cerrar walkthrough después de las 21:00.',
+      notes: 'Sucursal flagship. Cerrar la ronda después de las 21:00.',
     });
     console.log(`Created site: ${site.name} (${site.id})`);
   } else {
+    if (site.name !== SITE_NAME) {
+      site = (await sites.update(site.id, demoUser.id, { name: SITE_NAME })) ?? site;
+    }
     console.log('Demo site already exists');
   }
+  if (!site) {
+    throw new Error('No se pudo crear el sitio demo');
+  }
+  const demoSite = site;
 
-  const site = (await sites.findByOwner(user.id)).find((s) => s.name === 'Store 12 — Palermo');
-  const existingRondas = await RondaModel.find({ ownerId: user.id }).exec();
+  const existingRondas = await RondaModel.find({ ownerId: demoUser.id }).exec();
 
   async function seedHistory(opts: {
     marker: string;
@@ -101,17 +118,17 @@ async function seed(): Promise<void> {
       const findings = (r.findings ?? []) as Array<{ title?: string }>;
       return findings.some((f) => f.title === opts.marker) || r.location === opts.marker;
     });
-    if (!template || !site || already) return;
+    if (already) return;
     const completedAt = new Date(Date.now() - opts.daysAgo * 24 * 60 * 60 * 1000);
     await RondaModel.create({
-      templateId: template.id,
-      templateName: template.name,
-      ownerId: user.id,
-      siteId: site.id,
-      siteName: site.name,
+      templateId: demoTemplate.id,
+      templateName: demoTemplate.name,
+      ownerId: demoUser.id,
+      siteId: demoSite.id,
+      siteName: demoSite.name,
       location: opts.location,
       status: 'completed',
-      answers: template.items.map((item, itemIndex) => ({
+      answers: demoTemplate.items.map((item, itemIndex) => ({
         itemIndex,
         label: item.label,
         type: item.type,
@@ -149,16 +166,15 @@ async function seed(): Promise<void> {
   await seedHistory({
     marker: 'Salida de emergencia bloqueada',
     daysAgo: 1,
-    location: 'Pasillo 4 / deposito',
+    location: 'Pasillo 4 / depósito',
     failExit: true,
-    notes: 'Gondola de bebidas incompleta en cabecera',
+    notes: 'Góndola de bebidas incompleta en cabecera',
     finding: {
       title: 'Salida de emergencia bloqueada',
       notes: 'Cajas apiladas frente a la salida trasera.',
       severity: 'high',
     },
-    summary:
-      'La ronda en Store 12 — Palermo relevó una salida bloqueada y un hallazgo de gravedad alta.',
+    summary: `La ronda en ${SITE_NAME} relevó una salida bloqueada y un hallazgo de gravedad alta.`,
     risk: 'Alto',
     keyFindings: ['Salida de emergencia bloqueada'],
     actions: ['Liberar la salida y fotografiar la corrección', 'Cerrar el hallazgo con evidencia'],
@@ -167,12 +183,12 @@ async function seed(): Promise<void> {
   await seedHistory({
     marker: 'Extintor vencido',
     daysAgo: 3,
-    location: 'Cajas / deposito',
+    location: 'Cajas / depósito',
     failExit: false,
     notes: 'Display promo ok',
     finding: {
       title: 'Extintor vencido',
-      notes: 'Fecha de recarga 03/2024. Colocado detras de cajas.',
+      notes: 'Fecha de recarga 03/2024. Colocado detrás de cajas.',
       severity: 'high',
     },
     summary: 'Se detectó un extintor vencido detrás de cajas.',
@@ -182,19 +198,19 @@ async function seed(): Promise<void> {
   });
 
   await seedHistory({
-    marker: 'Gondola incompleta',
+    marker: 'Góndola incompleta',
     daysAgo: 5,
     location: 'Cabecera bebidas',
     failExit: false,
     notes: 'Faltan SKU de agua 2L',
     finding: {
-      title: 'Gondola incompleta',
+      title: 'Góndola incompleta',
       notes: 'Cabecera con huecos visibles.',
       severity: 'medium',
     },
     summary: 'Cumplimiento parcial por quiebre de góndola.',
     risk: 'Medio',
-    keyFindings: ['Gondola incompleta'],
+    keyFindings: ['Góndola incompleta'],
     actions: ['Reponer SKU faltantes', 'Revisar planograma'],
   });
 
@@ -203,7 +219,7 @@ async function seed(): Promise<void> {
     daysAgo: 7,
     location: 'Piso completo',
     failExit: false,
-    notes: 'Gondolas completas',
+    notes: 'Góndolas completas',
     summary: 'Ronda conforme. Sin hallazgos abiertos.',
     risk: 'Bajo',
     keyFindings: ['Sin desvíos'],
@@ -211,13 +227,13 @@ async function seed(): Promise<void> {
   });
 
   await seedHistory({
-    marker: 'Iluminacion pasillo 2',
+    marker: 'Iluminación pasillo 2',
     daysAgo: 10,
     location: 'Pasillo 2',
     failExit: false,
     notes: 'Un artefacto intermitente',
     finding: {
-      title: 'Iluminacion pasillo 2',
+      title: 'Iluminación pasillo 2',
       notes: 'Un artefacto parpadea sobre galletitas.',
       severity: 'low',
     },
