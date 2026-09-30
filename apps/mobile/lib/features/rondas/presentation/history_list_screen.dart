@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -14,6 +10,7 @@ import 'assign_ronda_sheet.dart';
 import 'perform_ronda_screen.dart';
 import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
+import 'share_ronda_pdf.dart';
 
 class HistoryListScreen extends StatefulWidget {
   const HistoryListScreen({super.key});
@@ -192,13 +189,9 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                           final bytes = await context
                               .read<RondaRepository>()
                               .exportPdf(item.id);
-                          final dir = await getTemporaryDirectory();
-                          final file = File(
-                            '${dir.path}/rondapro-${item.id}.pdf',
-                          );
-                          await file.writeAsBytes(bytes, flush: true);
-                          await Share.shareXFiles(
-                            [XFile(file.path, mimeType: 'application/pdf')],
+                          await shareRondaPdf(
+                            bytes: bytes,
+                            rondaId: item.id,
                             text: item.templateName,
                           );
                         } catch (e) {
