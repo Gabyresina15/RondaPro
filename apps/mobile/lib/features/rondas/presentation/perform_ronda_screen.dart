@@ -4,14 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/config/app_config.dart';
 import '../domain/ronda.dart';
+import 'demo_photos.dart';
 import 'ronda_detail_screen.dart';
 import 'rondas_controller.dart';
-
-const _demoPngA =
-    'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeklEQVR4nO3PUQkAIBTAwJfEYOY0oCH8OITBAtxm7fN1wwUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWPHYBUmfBD31AguIAAAAASUVORK5CYII=';
-const _demoPngB =
-    'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeklEQVR4nO3PUQkAIBTAwBfHOMY2liH8OITBAtxm7PV1wwUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWPHYBd/oBLbmWUAcAAAAASUVORK5CYII=';
 
 class PerformRondaScreen extends StatefulWidget {
   const PerformRondaScreen({super.key, required this.ronda});
@@ -87,15 +84,15 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
     final second = photoIndexes.length > 1 ? photoIndexes[1] : first;
     final ok = await context.read<RondasController>().addPhotos([
       {
-        'filename': 'evidence-a.png',
-        'mimeType': 'image/png',
-        'dataBase64': _demoPngA,
+        'filename': 'display-promo.jpg',
+        'mimeType': 'image/jpeg',
+        'dataBase64': demoJpegDisplayBase64,
         'itemIndex': first,
       },
       {
-        'filename': 'evidence-b.png',
-        'mimeType': 'image/png',
-        'dataBase64': _demoPngB,
+        'filename': 'extintor.jpg',
+        'mimeType': 'image/jpeg',
+        'dataBase64': demoJpegExtinguisherBase64,
         'itemIndex': second,
       },
     ]);
@@ -258,11 +255,12 @@ class _PerformRondaScreenState extends State<PerformRondaScreen> {
             label: const Text('Agregar hallazgo'),
           ),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _busy ? null : _addDemoPhotos,
-            icon: const Icon(Icons.photo_library_outlined),
-            label: const Text('Agregar 2 fotos de demo'),
-          ),
+          if (AppConfig.demoMode)
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _addDemoPhotos,
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Adjuntar fotos'),
+            ),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: canComplete ? _complete : null,
