@@ -14,13 +14,13 @@ Ritmo: pausas cortas (0.4–0.8 s) en cada pantalla nueva; no correr el mouse.
    - `demo@rondapro.local` / `Demo1234!` (auditor)
    - `supervisor@rondapro.local` / `Demo1234!` (supervisor)
 3. Sitio seed: `Store 12 — Palermo`.
-4. Flutter con demo mode (default):
+4. Flutter **con** `DEMO_MODE=true` (el default es `false`; sin esto no aparece **Adjuntar fotos**):
    ```bash
    flutter run -d chrome --web-renderer html \
      --dart-define=API_BASE_URL=http://127.0.0.1:3000 \
      --dart-define=DEMO_MODE=true
    ```
-5. Para vender IA de verdad, poné `GEMINI_API_KEY` en `apps/api/.env` **antes** de levantar la API. No la pegues en el video ni en el repo.
+5. Para vender IA de verdad, poné `GEMINI_API_KEY` en `apps/api/.env` **antes** de levantar la API. Si tenés `GEMINI_MODEL=gemini-2.0-flash`, cambialo a `gemini-2.5-flash` o borralo (el default ya es 2.5). No pegues la key en el video ni en el repo.
 6. Completá **una ronda de ensayo** (login → plantilla → fotos → completar → PDF) y borrala de la cabeza: esa pasada no se graba.
 7. Ventana del browser a 1280×720. Ocultá bookmarks. `debugShowCheckedModeBanner` ya está en false.
 
@@ -48,7 +48,7 @@ Hallazgos visibles al completar:
 Resumen:
 
 - Con key: caption `Resumen IA · Gemini · gemini-2.5-flash · {N}ms`
-- Sin key: caption `Resumen automático · heurístico (sin API key)`
+- Fallback: caption `Resumen automático · heurístico`
 
 ---
 
@@ -66,7 +66,7 @@ Features opcionales en este corte: **PDF sí**. Supervisor/orden/notificaciones/
 | 4 | 0:38–0:46 | Lista de plantillas | Click en `Ronda de piso retail`. En el diálogo: sitio `Store 12 — Palermo`. Nota de ubicación: `Pasillo 4 / deposito`. Click **Empezar**. | `Sitio + nota de ubicacion` |
 | 5 | 0:46–1:08 | Inspección | Switch **Entrada libre y limpia** → Pasa. En Notas de góndola escribí `Gondola de bebidas incompleta en cabecera`. Click **Adjuntar fotos** (aparece porque `DEMO_MODE=true`). Click **Agregar hallazgo**. Título: `Extintor vencido`. Notas: `Fecha de recarga 03/2024. Colocado detras de cajas.` Gravedad: **Alta**. Guardar. Switch **Salida de emergencia despejada** → dejar en Pendiente/falla (no lo pases). | `2 evidencias + 1 hallazgo de alta` |
 | 6 | 1:08–1:18 | Inspección → Detalle | Click **Completar ronda**. Esperar el resumen. Scroll lento 2 s sobre el caption + el texto. | caption de resumen (IA o heurístico, según key) |
-| 7 | 1:18–1:28 | Detalle | Click ícono PDF en el AppBar. Cuando aparece el share sheet, cancelá o mostrá el preview 2 s. | `PDF con fotos y caption por item` |
+| 7 | 1:18–1:28 | Detalle | Click ícono PDF en el AppBar. En web se descarga el PDF. Mostralo 2 s. | `PDF con fotos y caption por item` |
 | 8 | 1:28–1:30 | Detalle | Hold 1 s. Frame final. | `RondaPro · inspeccion lista para el supervisor` |
 
 Cierre: pantalla de **detalle de ronda completada**, con resumen visible. Frame final 1.5 s con título `RondaPro` y CTA `Repo en GitHub`.
@@ -135,7 +135,7 @@ Acentos: la UI está en español, pero el PDF dobla a ASCII (`gondola`, `deposit
 - [ ] Captions listos en el editor (CapCut / Premiere)
 - [ ] No se ve `.env`, terminal con keys, ni `Agregar 2 fotos de demo`
 - [ ] Al completar hay **2 fotos** y el botón no está disabled
-- [ ] El PDF muestra `Evidencia: Foto de display promo` y `Evidencia: Foto de extintor`
+- [ ] El PDF se descarga en web y muestra `Evidencia: Foto de display promo` y `Evidencia: Foto de extintor`
 - [ ] Frame final 1.5 s
 
 Si grabás en emulador Android y una foto se ve rota, relanzá con `--no-enable-impeller`.
