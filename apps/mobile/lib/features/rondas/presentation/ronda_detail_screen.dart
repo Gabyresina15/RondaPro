@@ -34,9 +34,12 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
       return 'Modelo no disponible · resumen de contingencia';
     }
     if (ronda.summarySource == 'llm') {
-      return 'Generado por Gemini';
+      final bits = <String>['Resumen IA', 'Gemini'];
+      if ((ronda.summaryModel ?? '').isNotEmpty) bits.add(ronda.summaryModel!);
+      if (ronda.summaryLatencyMs != null) bits.add('${ronda.summaryLatencyMs}ms');
+      return bits.join(' · ');
     }
-    return 'Resumen automático';
+    return 'Resumen automático · heurístico (sin API key)';
   }
 
   Future<void> _editFinding(RondaFinding finding) async {
