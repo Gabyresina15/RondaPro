@@ -7,6 +7,7 @@ const answerSchema = new Schema(
     type: { type: String, required: true, enum: ['text', 'bool', 'photo'] },
     textValue: { type: String, required: false },
     boolValue: { type: Boolean, required: false },
+    naValue: { type: Boolean, required: false },
   },
   { _id: false },
 );
@@ -94,6 +95,9 @@ const rondaSchema = new Schema(
     summarySource: { type: String, required: false, enum: ['llm', 'heuristic'] },
     summaryModel: { type: String, required: false },
     summaryLatencyMs: { type: Number, required: false },
+    summaryRisk: { type: String, required: false },
+    summaryKeyFindings: { type: [String], required: false, default: undefined },
+    summaryActions: { type: [String], required: false, default: undefined },
     completedAt: { type: Date, required: false },
     lastEditedAt: { type: Date, required: false },
     deletedAt: { type: Date, required: false, index: true },
