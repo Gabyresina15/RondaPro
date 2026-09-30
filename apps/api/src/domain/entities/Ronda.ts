@@ -8,6 +8,7 @@ export interface RondaAnswer {
   type: 'text' | 'bool' | 'photo';
   textValue?: string;
   boolValue?: boolean;
+  naValue?: boolean;
 }
 
 export interface RondaPhoto {

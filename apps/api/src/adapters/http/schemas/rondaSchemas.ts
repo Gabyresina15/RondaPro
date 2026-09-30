@@ -33,6 +33,7 @@ export const rondaAnswerSchema = z.object({
   type: z.enum(['text', 'bool', 'photo']),
   textValue: z.string().max(4000).optional(),
   boolValue: z.boolean().optional(),
+  naValue: z.boolean().optional(),
 });
 
 export const saveAnswersBodySchema = z.object({
