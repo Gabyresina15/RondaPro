@@ -8,4 +8,13 @@ class AppConfig {
     'API_BASE_URL',
     defaultValue: 'http://127.0.0.1:3000',
   );
+
+  /// When true, the inspection screen shows a shortcut that attaches two
+  /// bundled evidence JPEGs (needed for web / desktop recordings).
+  /// Disable for production-looking builds:
+  /// `--dart-define=DEMO_MODE=false`
+  static const bool demoMode = bool.fromEnvironment(
+    'DEMO_MODE',
+    defaultValue: true,
+  );
 }

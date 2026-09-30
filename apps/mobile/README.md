@@ -32,7 +32,9 @@ flutter run
 
 Demo credentials (after API seed): `demo@rondapro.local` / `Demo1234!`
 
-Flow: login → Templates tab → tap a template → fill answers → add ≥2 photos (gallery or “Add 2 demo photos”) → Complete ronda → summary → Historial tab.
+Flow: login → Templates tab → tap a template → fill answers → add photos (camera or **Adjuntar fotos** when `DEMO_MODE=true`) → Complete ronda → summary → Historial tab.
+
+`DEMO_MODE` defaults to `true`. Hide the shortcut with `--dart-define=DEMO_MODE=false`.
 
 ## Platform scaffolding
 
