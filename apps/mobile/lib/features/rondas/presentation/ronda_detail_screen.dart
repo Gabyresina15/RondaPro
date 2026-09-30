@@ -1,14 +1,13 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../data/ronda_repository.dart';
 import '../domain/ronda.dart';
+import 'display_format.dart';
 import 'rondas_controller.dart';
+import 'share_ronda_pdf.dart';
 
 class RondaDetailScreen extends StatefulWidget {
   const RondaDetailScreen({super.key, required this.ronda});
@@ -30,16 +29,16 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
 
   String _summaryCaption(Ronda ronda) {
     final text = ronda.summary ?? '';
-    if (text.contains('fallo de conexión') || text.contains('Revisión manual requerida')) {
-      return 'Modelo no disponible · resumen de contingencia';
+    if (text.contains('fallo de conexi\u00f3n') || text.contains('Revisi\u00f3n manual requerida')) {
+      return 'Modelo no disponible \u00b7 resumen de contingencia';
     }
     if (ronda.summarySource == 'llm') {
       final bits = <String>['Resumen IA', 'Gemini'];
       if ((ronda.summaryModel ?? '').isNotEmpty) bits.add(ronda.summaryModel!);
       if (ronda.summaryLatencyMs != null) bits.add('${ronda.summaryLatencyMs}ms');
-      return bits.join(' · ');
+      return bits.join(' \u00b7 ');
     }
-    return 'Resumen automático · heurístico (sin API key)';
+    return 'Resumen autom\u00e1tico \u00b7 heur\u00edstico';
   }
 
   Future<void> _editFinding(RondaFinding finding) async {
@@ -64,7 +63,7 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: note,
-                  decoration: const InputDecoration(labelText: 'Nota de resolución'),
+                  decoration: const InputDecoration(labelText: 'Nota de resoluci\u00f3n'),
                   minLines: 2,
                   maxLines: 4,
                 ),
@@ -102,11 +101,9 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
   Future<void> _exportPdf() async {
     try {
       final bytes = await context.read<RondaRepository>().exportPdf(_ronda.id);
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/rondapro-${_ronda.id}.pdf');
-      await file.writeAsBytes(bytes, flush: true);
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/pdf')],
+      await shareRondaPdf(
+        bytes: bytes,
+        rondaId: _ronda.id,
         text: _ronda.templateName,
       );
     } catch (e) {
@@ -144,12 +141,12 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
               if ((ronda.siteName ?? '').isNotEmpty) ronda.siteName!,
               if (ronda.location.isNotEmpty) ronda.location,
               if ((ronda.siteName ?? '').isEmpty && ronda.location.isEmpty)
-                'Sin ubicación',
-            ].join(' · '),
+                'Sin ubicaci\u00f3n',
+            ].join(' \u00b7 '),
           ),
           if (ronda.completedAt != null) ...[
             const SizedBox(height: 4),
-            Text('Finalizada ${ronda.completedAt!.toLocal()}'),
+            Text('Finalizada ${formatDateTimeEs(ronda.completedAt!)}'),
           ],
           const SizedBox(height: 16),
           if ((ronda.summary ?? '').isNotEmpty) ...[
@@ -176,11 +173,11 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
                   title: Text(f.title),
                   subtitle: Text(
                     [
-                      '${f.severity} · ${f.isOpen ? 'abierto' : 'cerrado'}',
+                      '${formatSeverity(f.severity)} \u00b7 ${f.isOpen ? 'abierto' : 'cerrado'}',
                       if ((f.assignee ?? '').isNotEmpty) 'Asignado: ${f.assignee}',
                       if (f.notes.isNotEmpty) f.notes,
                       if ((f.resolutionNote ?? '').isNotEmpty)
-                        'Resolución: ${f.resolutionNote}',
+                        'Resoluci\u00f3n: ${f.resolutionNote}',
                     ].join('\n'),
                   ),
                   trailing: TextButton(
@@ -229,7 +226,7 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
     if (answer.type == 'text') {
       return (answer.textValue ?? '').isEmpty ? 'Sin notas' : answer.textValue!;
     }
-    return 'Ítem de foto';
+    return '\u00cdtem de foto';
   }
 }
 
