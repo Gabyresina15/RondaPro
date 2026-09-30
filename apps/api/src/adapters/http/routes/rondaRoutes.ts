@@ -53,6 +53,8 @@ function serializeRonda(ronda: Ronda) {
     })),
     summary: ronda.summary ?? null,
     summarySource: ronda.summarySource ?? null,
+    summaryModel: ronda.summaryModel ?? null,
+    summaryLatencyMs: ronda.summaryLatencyMs ?? null,
     completedAt: ronda.completedAt?.toISOString() ?? null,
     createdAt: ronda.createdAt.toISOString(),
     updatedAt: ronda.updatedAt.toISOString(),
