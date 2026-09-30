@@ -43,6 +43,28 @@ class S {
   String get answers => es ? 'Respuestas' : 'Answers';
   String get photos => es ? 'Fotos' : 'Photos';
   String get llmSummary => es ? 'Resumen IA' : 'LLM summary';
+  String summaryCaption({
+    required String? source,
+    String? model,
+    int? latencyMs,
+  }) {
+    final isLlm = source == 'llm';
+    if (!isLlm) {
+      return es
+          ? 'Resumen automático · heurístico (sin API key)'
+          : 'Automatic summary · heuristic (no API key)';
+    }
+    final provider = (model ?? '').toLowerCase().contains('gpt')
+        ? 'OpenAI'
+        : 'Gemini';
+    final bits = <String>[
+      es ? 'Resumen IA' : 'LLM summary',
+      provider,
+      if ((model ?? '').isNotEmpty) model!,
+      if (latencyMs != null && latencyMs > 0) '${latencyMs}ms',
+    ];
+    return bits.join(' · ');
+  }
   String get pass => es ? 'Pasa' : 'Pass';
   String get fail => es ? 'Falla' : 'Fail';
   String get notAnswered => es ? 'Sin responder' : 'Not answered';
@@ -76,8 +98,10 @@ class S {
       ? 'Todavía no hay plantillas.\nCreá una para tu equipo.'
       : 'No templates yet.\nCreate one for your team.';
   String get addFinding => es ? 'Agregar hallazgo' : 'Add finding';
-  String get addDemoPhotos =>
-      es ? 'Agregar 2 fotos de demo' : 'Add 2 demo photos';
+  String get addDemoPhotos => es ? 'Adjuntar fotos' : 'Attach photos';
+  String get attachPhotosHint => es
+      ? 'Adjunta 2 evidencias para poder completar'
+      : 'Attach 2 evidence photos to complete';
   String get completeRonda => es ? 'Completar ronda' : 'Complete ronda';
   String get attachPhoto => es ? 'Adjuntar foto' : 'Attach photo';
   String get attachExtraPhoto =>
@@ -100,6 +124,15 @@ class S {
   String get generatedHeuristic => es
       ? 'Generado sin API key (resumen heurístico)'
       : 'Generated without an API key (heuristic fallback)';
+  String summaryCaptionLlm({String? model, int? latencyMs}) {
+    final bits = <String>['Resumen IA', 'Gemini'];
+    if ((model ?? '').isNotEmpty) bits.add(model!);
+    if (latencyMs != null) bits.add('${latencyMs}ms');
+    return bits.join(' · ');
+  }
+  String get summaryCaptionHeuristic => es
+      ? 'Resumen automático · heurístico (sin API key)'
+      : 'Automatic summary · heuristic (no API key)';
   String get refresh => es ? 'Actualizar' : 'Refresh';
   String get haveAccount =>
       es ? '¿Ya tenés cuenta? Entrar' : 'Already have an account? Sign in';
