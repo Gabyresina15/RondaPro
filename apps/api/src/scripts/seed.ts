@@ -84,9 +84,10 @@ async function seed(): Promise<void> {
   const site = (await sites.findByOwner(user.id)).find((s) => s.name === 'Store 12 — Palermo');
   const template = (await templates.findByOwner(user.id)).find((t) => t.name === 'Retail floor checklist');
   const existingRondas = await RondaModel.find({ ownerId: user.id }).exec();
-  const hasDemoFinding = existingRondas.some((r) =>
-    (r.findings ?? []).some((f) => f.title === 'Blocked emergency exit'),
-  );
+  const hasDemoFinding = existingRondas.some((r) => {
+    const findings = (r.findings ?? []) as Array<{ title?: string }>;
+    return findings.some((f) => f.title === 'Blocked emergency exit');
+  });
   if (template && site && !hasDemoFinding) {
     await RondaModel.create({
       templateId: template.id,
