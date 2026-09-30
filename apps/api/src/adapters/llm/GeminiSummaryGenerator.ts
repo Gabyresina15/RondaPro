@@ -168,7 +168,6 @@ function uniqueModels(preferred: string): string[] {
   const list = [
     preferred,
     'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
     'gemini-flash-latest',
   ];
   return [...new Set(list.filter(Boolean))];
