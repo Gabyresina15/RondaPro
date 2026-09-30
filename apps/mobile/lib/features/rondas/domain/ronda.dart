@@ -33,13 +33,17 @@ class RondaAnswer {
     };
   }
 
-  RondaAnswer copyWith({String? textValue, bool? boolValue}) {
+  RondaAnswer copyWith({
+    String? textValue,
+    bool? boolValue,
+    bool clearBool = false,
+  }) {
     return RondaAnswer(
       itemIndex: itemIndex,
       label: label,
       type: type,
       textValue: textValue ?? this.textValue,
-      boolValue: boolValue ?? this.boolValue,
+      boolValue: clearBool ? null : (boolValue ?? this.boolValue),
     );
   }
 }
@@ -136,6 +140,9 @@ class Ronda {
     this.summarySource,
     this.summaryModel,
     this.summaryLatencyMs,
+    this.summaryRisk,
+    this.summaryKeyFindings = const [],
+    this.summaryActions = const [],
     this.completedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -156,6 +163,9 @@ class Ronda {
   final String? summarySource;
   final String? summaryModel;
   final int? summaryLatencyMs;
+  final String? summaryRisk;
+  final List<String> summaryKeyFindings;
+  final List<String> summaryActions;
   final DateTime? completedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -187,6 +197,13 @@ class Ronda {
       summaryLatencyMs: json['summaryLatencyMs'] is int
           ? json['summaryLatencyMs'] as int
           : int.tryParse('${json['summaryLatencyMs'] ?? ''}'),
+      summaryRisk: json['summaryRisk'] as String?,
+      summaryKeyFindings: (json['summaryKeyFindings'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      summaryActions: (json['summaryActions'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
       completedAt: json['completedAt'] == null
           ? null
           : DateTime.parse(json['completedAt'] as String),
