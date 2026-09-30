@@ -78,7 +78,8 @@ export class FallbackSummaryGenerator implements SummaryGenerator {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.warn(`[summary] Gemini fallback: ${message}`);
-      return this.fallback.generate(ronda);
+      const generated = await this.fallback.generate(ronda);
+      return { ...generated, model: 'gemini-unavailable' };
     }
   }
 }
