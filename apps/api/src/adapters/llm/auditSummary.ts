@@ -16,6 +16,7 @@ export const AUDIT_SYSTEM_PROMPT = [
   'Usa Desconocido solo si no hay datos suficientes.',
   'hallazgos_clave: 1 a 4 frases cortas con lo que el supervisor debe ver primero.',
   'acciones_recomendadas: 2 a 4 acciones concretas y ordenadas.',
+  'Concordancia: con un solo hallazgo escribí "Queda 1 hallazgo abierto", nunca "Quedan 1".',
   'Responde únicamente con JSON válido, sin markdown.',
 ].join(' ');
 
