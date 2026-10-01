@@ -137,6 +137,15 @@ class ParsedSummary {
   final List<String> actions;
 }
 
+String agreeFindings(String text) {
+  return text
+      .replaceAll(
+        RegExp(r'Quedan\s+1\s+hallazgos?\s+abiertos?', caseSensitive: false),
+        'Queda 1 hallazgo abierto',
+      )
+      .replaceAll(RegExp(r'\b1\s+hallazgos\b'), '1 hallazgo');
+}
+
 ParsedSummary parseSummary(Ronda ronda) {
   final text = (ronda.summary ?? '').trim();
   var risk = ronda.summaryRisk ?? '';
@@ -180,7 +189,7 @@ ParsedSummary parseSummary(Ronda ronda) {
   }
 
   return ParsedSummary(
-    executive: executive,
+    executive: agreeFindings(executive),
     risk: risk,
     keyFindings: findings,
     actions: actions,

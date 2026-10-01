@@ -125,11 +125,9 @@ class _RondaDetailScreenState extends State<RondaDetailScreen> {
         text: _ronda.templateName,
       );
       if (!mounted) return;
-      final shortId = _ronda.id.length > 6
-          ? _ronda.id.substring(_ronda.id.length - 6)
-          : _ronda.id;
+      final name = rondaPdfFilename(_ronda.id);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF descargado · rondapro-$shortId.pdf')),
+        SnackBar(content: Text('PDF descargado · $name')),
       );
     } catch (e) {
       if (!mounted) return;

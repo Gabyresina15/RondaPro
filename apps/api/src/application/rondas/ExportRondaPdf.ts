@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import type { Ronda } from '../../domain/entities/Ronda.js';
 import type { PhotoStorage } from '../../domain/ports/PhotoStorage.js';
 import type { RondaRepository } from '../../domain/ports/RondaRepository.js';
+import { agreeFindings } from '../../adapters/llm/auditSummary.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 const WIN_ANSI: Record<string, string> = {
@@ -48,7 +49,7 @@ function executiveOnly(summary?: string): string {
   const text = (summary ?? '').trim();
   if (!text) return 'Sin resumen.';
   const cut = text.search(/\n\s*Nivel de riesgo:/i);
-  return (cut > 0 ? text.slice(0, cut) : text).trim();
+  return agreeFindings((cut > 0 ? text.slice(0, cut) : text).trim());
 }
 
 function wrap(text: string, width: number): string[] {
@@ -172,40 +173,41 @@ function checklistSection(ronda: Ronda): string[] {
   return lines;
 }
 
-function paginateSections(sections: string[][], limit: number): string[][] {
-  const pages: string[][] = [];
-  let page: string[] = [];
-  const flush = () => {
-    if (page.length) pages.push(page);
-    page = [];
-  };
-  for (const section of sections) {
-    const block = section.flatMap((line) => wrap(line, 88));
-    if (!block.length) continue;
-    if (page.length && page.length + block.length > limit) flush();
-    if (block.length > limit) {
-      flush();
-      for (let i = 0; i < block.length; i += limit) pages.push(block.slice(i, i + limit));
-      continue;
-    }
-    page.push(...block);
+const REPORT_LIMIT = 46;
+
+function reportPage(ronda: Ronda): string[] {
+  const sections = reportSections(ronda);
+  const actionIndex = sections.findIndex((section) => section.some((line) => line.startsWith('Acciones recomendadas')));
+  const actions = actionIndex >= 0 ? sections[actionIndex] : [];
+  const before = sections.filter((_, index) => index !== actionIndex);
+  const actionLines = actions.flatMap((line) => wrap(line, 88));
+  const head = before.flatMap((section) => section.flatMap((line) => wrap(line, 88)));
+  const budget = REPORT_LIMIT - actionLines.length;
+  if (actionLines.length && head.length > budget) {
+    return [...head.slice(0, Math.max(8, budget - 1)), '...', ...actionLines];
   }
-  flush();
-  return pages.length ? pages : [['Sin contenido.']];
+  return [...head, ...actionLines].slice(0, REPORT_LIMIT);
+}
+
+function checklistPages(ronda: Ronda): string[][] {
+  const lines = checklistSection(ronda).flatMap((line) => wrap(line, 88));
+  const pages: string[][] = [];
+  for (let i = 0; i < lines.length; i += REPORT_LIMIT) pages.push(lines.slice(i, i + REPORT_LIMIT));
+  return pages.length ? pages : [['3. CHECKLIST', 'Sin respuestas.']];
 }
 
 type PdfImage = { bytes: Buffer; width: number; height: number; caption: string };
 
 function fit(image: PdfImage, maxW: number, maxH: number): { w: number; h: number } {
   const scale = Math.min(maxW / image.width, maxH / image.height, 1);
-  return { w: Math.round(image.width * scale), h: Math.round(image.height * scale) };
+  return { w: Math.max(1, Math.round(image.width * scale)), h: Math.max(1, Math.round(image.height * scale)) };
 }
 
 function drawImage(imageId: number, image: PdfImage, maxW: number, maxH: number, top: number): { stream: string; bottom: number } {
   const { w, h } = fit(image, maxW, maxH);
   const x = Math.round((612 - w) / 2);
-  const y = top - h;
-  const captionY = y - 16;
+  const y = Math.max(48, top - h);
+  const captionY = Math.max(32, y - 16);
   const stream = [
     'q',
     `${w} 0 0 ${h} ${x} ${y} cm`,
@@ -217,7 +219,14 @@ function drawImage(imageId: number, image: PdfImage, maxW: number, maxH: number,
     `(${escapePdf(image.caption)}) Tj`,
     'ET',
   ].join('\n');
-  return { stream, bottom: captionY - 18 };
+  return { stream, bottom: captionY - 14 };
+}
+
+function evidenceGroups(images: PdfImage[]): PdfImage[][] {
+  if (!images.length) return [];
+  const groups: PdfImage[][] = [];
+  for (let i = 0; i < images.length; i += 2) groups.push(images.slice(i, i + 2));
+  return groups;
 }
 
 export class ExportRondaPdf {
@@ -250,7 +259,7 @@ export class ExportRondaPdf {
       }
     }
     return {
-      bytes: this.build(paginateSections(reportSections(ronda), 46), paginateSections([checklistSection(ronda)], 46), images),
+      bytes: this.build([reportPage(ronda)], checklistPages(ronda), images),
       filename: pdfFilename(ronda.id),
     };
   }
@@ -277,21 +286,23 @@ export class ExportRondaPdf {
     for (const lines of reportPages) addTextPage(lines);
     for (const lines of checklistPages) addTextPage(lines);
 
-    if (images.length) {
-      const imageIds = images.map((image) =>
+    for (const group of evidenceGroups(images)) {
+      const imageIds = group.map((image) =>
         push([
           { text: `<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.bytes.length} >>\nstream\n` },
           { binary: image.bytes },
           { text: '\nendstream' },
         ]),
       );
+      const captionH = 28;
+      const available = 680;
+      const maxH = Math.max(160, Math.floor(available / group.length) - captionH);
       const chunks = [textStream(['4. EVIDENCIAS'], 760)];
-      let top = images.length === 1 ? 720 : 730;
-      const maxH = images.length === 1 ? 560 : 300;
-      for (let i = 0; i < images.length; i += 1) {
-        const drawn = drawImage(imageIds[i], images[i], 500, maxH, top);
+      let top = 724;
+      for (let i = 0; i < group.length; i += 1) {
+        const drawn = drawImage(imageIds[i], group[i], 500, maxH, top);
         chunks.push(drawn.stream);
-        top = drawn.bottom;
+        top = drawn.bottom - 6;
       }
       const stream = chunks.join('\n');
       const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);

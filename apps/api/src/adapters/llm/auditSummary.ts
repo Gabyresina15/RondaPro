@@ -16,7 +16,7 @@ export const AUDIT_SYSTEM_PROMPT = [
   'Usa Desconocido solo si no hay datos suficientes.',
   'hallazgos_clave: 1 a 4 frases cortas con lo que el supervisor debe ver primero.',
   'acciones_recomendadas: 2 a 4 acciones concretas y ordenadas.',
-  'Concordancia: con un solo hallazgo escribí "Queda 1 hallazgo abierto", nunca "Quedan 1".',
+  'Concordancia: con un solo hallazgo escribí "Queda 1 hallazgo abierto", nunca "Quedan 1 hallazgos".',
   'Responde únicamente con JSON válido, sin markdown.',
 ].join(' ');
 
@@ -52,6 +52,13 @@ export function connectionFallbackSummary(): StructuredAuditSummary {
   };
 }
 
+export function agreeFindings(text: string): string {
+  return text
+    .replace(/Quedan\s+1\s+hallazgos?\s+abiertos?/gi, 'Queda 1 hallazgo abierto')
+    .replace(/Quedan\s+1\b/g, 'Queda 1')
+    .replace(/\b1\s+hallazgos\b/g, '1 hallazgo');
+}
+
 export function formatStructuredSummary(data: StructuredAuditSummary): string {
   const findings = data.hallazgos_clave.length
     ? data.hallazgos_clave.map((item) => `- ${item}`).join('\n')
@@ -59,7 +66,7 @@ export function formatStructuredSummary(data: StructuredAuditSummary): string {
   const actions = data.acciones_recomendadas.length
     ? data.acciones_recomendadas.map((item, i) => `${i + 1}. ${item}`).join('\n')
     : '1. Sin acciones adicionales.';
-  return [
+  const body = [
     data.resumen_ejecutivo.trim(),
     `Nivel de riesgo: ${data.nivel_de_riesgo}`,
     'Hallazgos clave:',
@@ -67,6 +74,7 @@ export function formatStructuredSummary(data: StructuredAuditSummary): string {
     'Acciones recomendadas:',
     actions,
   ].join('\n\n');
+  return agreeFindings(body);
 }
 
 export function parseStructuredSummary(raw: string): StructuredAuditSummary {
@@ -89,7 +97,7 @@ export function parseStructuredSummary(raw: string): StructuredAuditSummary {
     ? parsed.hallazgos_clave
     : [];
   return {
-    resumen_ejecutivo: parsed.resumen_ejecutivo.trim(),
+    resumen_ejecutivo: agreeFindings(parsed.resumen_ejecutivo.trim()),
     nivel_de_riesgo: valid.includes(risk as RiskLevel)
       ? (risk as RiskLevel)
       : 'Desconocido',
