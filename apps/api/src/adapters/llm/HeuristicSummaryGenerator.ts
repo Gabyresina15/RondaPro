@@ -76,7 +76,7 @@ export function fromRonda(ronda: Ronda): StructuredAuditSummary {
       ? `Checklist: ${passed.length} ${plural(passed.length, 'ítem conforme', 'ítems conformes')} y ${failed.length} ${plural(failed.length, 'no conforme', 'no conformes')}${failedLabels ? ` (${failedLabels})` : ''}.`
       : 'No se registraron checks de pasa/falla.',
     open.length
-      ? `Quedan ${open.length} ${plural(open.length, 'hallazgo abierto', 'hallazgos abiertos')}.`
+      ? `${open.length === 1 ? 'Queda' : 'Quedan'} ${open.length} ${plural(open.length, 'hallazgo abierto', 'hallazgos abiertos')}.`
       : 'No hay hallazgos abiertos.',
     notes.length ? `Se consignaron notas en: ${notes.join(', ')}.` : '',
   ]
@@ -85,7 +85,8 @@ export function fromRonda(ronda: Ronda): StructuredAuditSummary {
 
   const acciones: string[] = [];
   if (failed.length) acciones.push(`Revisar y regularizar: ${failedLabels || 'ítems no conformes'}`);
-  if (open.length) acciones.push('Cerrar los hallazgos abiertos con evidencia de resolución');
+  if (open.length === 1) acciones.push('Cerrar el hallazgo abierto con evidencia de resolución');
+  else if (open.length) acciones.push('Cerrar los hallazgos abiertos con evidencia de resolución');
   if (high > 0) acciones.push('Priorizar los hallazgos de gravedad alta en las próximas 24 h');
   if (!acciones.length) acciones.push('Mantener el estándar observado en la próxima visita');
 

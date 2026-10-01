@@ -1,10 +1,5 @@
-Fotos de evidencia para `DEMO_MODE=true`.
+# Fotos de evidencia para DEMO_MODE
 
-`demo_photos.dart` carga primero `display-promo.b64` / `extintor.b64` y si no existen usa el `.jpg`.
+`demo_photos.dart` carga primero `display-promo.b64` / `extintor.b64` (JPEG 640x480) y, si no están, el `.jpg` del mismo nombre.
 
-Si al hacer pull no ves las fotos reales, copiá estos 4 archivos desde tu working copy local:
-
-- display-promo.jpg
-- display-promo.b64
-- extintor.jpg
-- extintor.b64
+Con estos archivos en el repo, **Adjuntar fotos** no necesita parches locales.

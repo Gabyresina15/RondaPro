@@ -13,7 +13,7 @@ Future<void> shareRondaPdf({
         XFile.fromData(
           Uint8List.fromList(bytes),
           mimeType: 'application/pdf',
-          name: 'rondapro-$rondaId.pdf',
+          name: 'rondapro-${rondaId.length > 6 ? rondaId.substring(rondaId.length - 6) : rondaId}.pdf',
         ),
       ],
       text: text,
