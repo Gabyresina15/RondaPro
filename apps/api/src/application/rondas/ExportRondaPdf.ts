@@ -6,16 +6,22 @@ import { agreeFindings } from '../../adapters/llm/auditSummary.js';
 import { RondaNotFoundError } from './GetRonda.js';
 
 const WIN_ANSI: Record<string, string> = {
-  '\u2014': '\x97',
-  '\u2013': '\x96',
-  '\u201C': '\x93',
-  '\u201D': '\x94',
-  '\u2018': '\x91',
-  '\u2019': '\x92',
-  '\u2026': '\x85',
-  '\u20AC': '\x80',
-  '\u2022': '\x95',
+  '\u2014': '\x97', // —
+  '\u2013': '\x96', // –
+  '\u201C': '\x93', // “
+  '\u201D': '\x94', // ”
+  '\u2018': '\x91', // ‘
+  '\u2019': '\x92', // ’
+  '\u2026': '\x85', // …
+  '\u20AC': '\x80', // €
+  '\u2022': '\x95', // •
 };
+
+const LINE_H = 14;
+const PAGE_TOP = 760;
+const PAGE_BOTTOM = 48;
+const PAGE_CAPACITY = Math.floor((PAGE_TOP - PAGE_BOTTOM) / LINE_H);
+const WRAP = 88;
 
 export function pdfFilename(rondaId: string): string {
   const short = rondaId.length > 6 ? rondaId.slice(-6) : rondaId;
@@ -65,7 +71,7 @@ function wrap(text: string, width: number): string[] {
       const next = current ? `${current} ${word}` : word;
       if (next.length > width) {
         if (current) out.push(current);
-        current = word;
+        current = word.length > width ? word.slice(0, width) : word;
       } else current = next;
     }
     if (current) out.push(current);
@@ -96,8 +102,8 @@ function jpegSize(buf: Buffer): { width: number; height: number } | null {
   return null;
 }
 
-function textStream(lines: string[], startY = 760): string {
-  const chunks = ['BT', '/F1 11 Tf', `48 ${startY} Td`, '14 TL'];
+function textStream(lines: string[], startY = PAGE_TOP): string {
+  const chunks = ['BT', '/F1 11 Tf', `48 ${startY} Td`, `${LINE_H} TL`];
   for (const line of lines) {
     chunks.push(`(${escapePdf(line)}) Tj`, 'T*');
   }
@@ -105,95 +111,117 @@ function textStream(lines: string[], startY = 760): string {
   return chunks.join('\n');
 }
 
-function severityEs(raw: string): string {
-  if (raw === 'high') return 'Alta';
-  if (raw === 'medium') return 'Media';
-  if (raw === 'low') return 'Baja';
-  return raw;
+function scoreLine(ronda: Ronda): string {
+  let ok = 0;
+  let applicable = 0;
+  for (const answer of ronda.answers) {
+    if (answer.naValue) continue;
+    applicable += 1;
+    if (answer.type === 'bool' && answer.boolValue === true) ok += 1;
+    else if (answer.type === 'text' && (answer.textValue ?? '').trim()) ok += 1;
+    else if (answer.type === 'photo' && ronda.photos.some((photo) => photo.itemIndex === answer.itemIndex)) {
+      ok += 1;
+    }
+  }
+  const percent = applicable === 0 ? 0 : Math.round((ok / applicable) * 100);
+  return `${ok}/${applicable} OK · ${percent}% cumplimiento`;
 }
 
-function reportSections(ronda: Ronda): string[][] {
-  const source =
-    ronda.summarySource === 'llm'
-      ? `Gemini${ronda.summaryModel && ronda.summaryModel !== 'heuristic' && ronda.summaryModel !== 'gemini-unavailable' ? ` (${ronda.summaryModel})` : ''}${ronda.summaryLatencyMs != null ? ` ${ronda.summaryLatencyMs} ms` : ''}`
-      : ronda.summarySource
-        ? 'Resumen automático'
-        : '-';
-  const meta = [
+function sourceLine(ronda: Ronda): string {
+  if (ronda.summarySource === 'llm') {
+    const model =
+      ronda.summaryModel && ronda.summaryModel !== 'heuristic' && ronda.summaryModel !== 'gemini-unavailable'
+        ? ` (${ronda.summaryModel})`
+        : '';
+    const latency = ronda.summaryLatencyMs != null ? ` ${ronda.summaryLatencyMs} ms` : '';
+    return `Gemini${model}${latency}`;
+  }
+  return ronda.summarySource ? 'Resumen automático' : '-';
+}
+
+type Block = { lines: string[] };
+
+function reportBlocks(ronda: Ronda): Block[] {
+  const header = [
     'RONDAPRO',
     'Informe de inspección de campo',
     '----------------------------------------------',
     `Plantilla: ${ronda.templateName}`,
-    `Sitio: ${ronda.siteName || ronda.location || '-'}`,
+    `Sitio: ${ronda.siteName || '-'}`,
+    `Ubicación: ${ronda.location || '-'}`,
     `Estado: ${ronda.status === 'completed' ? 'Completada' : 'En curso'}`,
+    `Creada: ${formatAr(ronda.createdAt)}`,
     `Cerrada: ${formatAr(ronda.completedAt)}`,
     `Editada: ${formatAr(ronda.lastEditedAt)}`,
-    `Fuente: ${source}`,
+    `Fuente: ${sourceLine(ronda)}`,
+    `Puntaje: ${scoreLine(ronda)}`,
     `Riesgo: ${ronda.summaryRisk ?? '-'}`,
-    '',
-    '1. RESUMEN',
-    executiveOnly(ronda.summary),
   ];
-  const sections = [meta];
   const findings = ronda.summaryKeyFindings ?? [];
-  if (findings.length) {
-    sections.push(['', 'Hallazgos clave:', ...findings.map((item) => `- ${item}`)]);
-  }
   const actions = ronda.summaryActions ?? [];
-  if (actions.length) {
-    sections.push([
-      '',
-      'Acciones recomendadas:',
-      ...actions.map((item, i) => `${i + 1}. ${item}`),
-    ]);
-  }
-  const registered = ['', '2. HALLAZGOS'];
-  if (!ronda.findings.length) registered.push('No se registraron hallazgos.');
-  else {
-    for (const f of ronda.findings) {
-      registered.push(
-        `- ${f.title} [${severityEs(f.severity)} / ${f.status === 'open' ? 'abierto' : 'cerrado'}]`,
-      );
-    }
-  }
-  sections.push(registered);
-  return sections;
-}
-
-function checklistSection(ronda: Ronda): string[] {
-  const lines = ['3. CHECKLIST'];
-  for (const a of ronda.answers) {
+  const checklist = ['4. CHECKLIST'];
+  if (!ronda.answers.length) checklist.push('Sin respuestas.');
+  for (const answer of ronda.answers) {
     let value = '-';
-    if (a.type === 'bool') {
-      value = a.naValue ? 'N/A' : a.boolValue === true ? 'Pasa' : a.boolValue === false ? 'No pasa' : 'Sin responder';
-    } else if (a.type === 'text') value = a.textValue?.trim() || 'Sin notas';
+    if (answer.type === 'bool') {
+      value = answer.naValue
+        ? 'N/A'
+        : answer.boolValue === true
+          ? 'Pasa'
+          : answer.boolValue === false
+            ? 'No pasa'
+            : 'Sin responder';
+    } else if (answer.type === 'text') value = answer.textValue?.trim() || 'Sin notas';
     else value = 'Evidencia fotográfica';
-    lines.push(`- ${a.label}: ${value}`);
+    checklist.push(`- ${answer.label}: ${value}`);
   }
-  return lines;
+  return [
+    { lines: header.flatMap((line) => wrap(line, WRAP)) },
+    { lines: ['', '1. RESUMEN EJECUTIVO', executiveOnly(ronda.summary)].flatMap((line) => wrap(line, WRAP)) },
+    {
+      lines: ['', '2. HALLAZGOS CLAVE', ...(findings.length ? findings.map((item) => `- ${item}`) : ['Sin hallazgos clave.'])].flatMap(
+        (line) => wrap(line, WRAP),
+      ),
+    },
+    {
+      lines: [
+        '',
+        '3. ACCIONES RECOMENDADAS',
+        ...(actions.length ? actions.map((item, i) => `${i + 1}. ${item}`) : ['Sin acciones recomendadas.']),
+      ].flatMap((line) => wrap(line, WRAP)),
+    },
+    { lines: ['', ...checklist].flatMap((line) => wrap(line, WRAP)) },
+  ];
 }
 
-const REPORT_LIMIT = 46;
-
-function reportPage(ronda: Ronda): string[] {
-  const sections = reportSections(ronda);
-  const actionIndex = sections.findIndex((section) => section.some((line) => line.startsWith('Acciones recomendadas')));
-  const actions = actionIndex >= 0 ? sections[actionIndex] : [];
-  const before = sections.filter((_, index) => index !== actionIndex);
-  const actionLines = actions.flatMap((line) => wrap(line, 88));
-  const head = before.flatMap((section) => section.flatMap((line) => wrap(line, 88)));
-  const budget = REPORT_LIMIT - actionLines.length;
-  if (actionLines.length && head.length > budget) {
-    return [...head.slice(0, Math.max(8, budget - 1)), '...', ...actionLines];
-  }
-  return [...head, ...actionLines].slice(0, REPORT_LIMIT);
-}
-
-function checklistPages(ronda: Ronda): string[][] {
-  const lines = checklistSection(ronda).flatMap((line) => wrap(line, 88));
+/** Pack whole blocks. Split a block only when it does not fit an empty page. */
+export function packBlocks(blocks: Block[], capacity = PAGE_CAPACITY): string[][] {
   const pages: string[][] = [];
-  for (let i = 0; i < lines.length; i += REPORT_LIMIT) pages.push(lines.slice(i, i + REPORT_LIMIT));
-  return pages.length ? pages : [['3. CHECKLIST', 'Sin respuestas.']];
+  let current: string[] = [];
+  const flush = () => {
+    if (current.length) pages.push(current);
+    current = [];
+  };
+  for (const block of blocks) {
+    const lines = block.lines;
+    if (!lines.length) continue;
+    if (lines.length <= capacity - current.length) {
+      current.push(...lines);
+      continue;
+    }
+    if (lines.length <= capacity) {
+      flush();
+      current.push(...lines);
+      continue;
+    }
+    flush();
+    for (let i = 0; i < lines.length; i += capacity) {
+      pages.push(lines.slice(i, i + capacity));
+    }
+    current = pages.pop() ?? [];
+  }
+  flush();
+  return pages.length ? pages : [['Sin contenido.']];
 }
 
 type PdfImage = { bytes: Buffer; width: number; height: number; caption: string };
@@ -203,11 +231,18 @@ function fit(image: PdfImage, maxW: number, maxH: number): { w: number; h: numbe
   return { w: Math.max(1, Math.round(image.width * scale)), h: Math.max(1, Math.round(image.height * scale)) };
 }
 
-function drawImage(imageId: number, image: PdfImage, maxW: number, maxH: number, top: number): { stream: string; bottom: number } {
+function drawImage(
+  imageId: number,
+  image: PdfImage,
+  maxW: number,
+  maxH: number,
+  top: number,
+): { stream: string; bottom: number } | null {
   const { w, h } = fit(image, maxW, maxH);
   const x = Math.round((612 - w) / 2);
-  const y = Math.max(48, top - h);
-  const captionY = Math.max(32, y - 16);
+  const y = top - h;
+  const captionY = y - 16;
+  if (captionY < 40 || y < 48) return null;
   const stream = [
     'q',
     `${w} 0 0 ${h} ${x} ${y} cm`,
@@ -223,10 +258,93 @@ function drawImage(imageId: number, image: PdfImage, maxW: number, maxH: number,
 }
 
 function evidenceGroups(images: PdfImage[]): PdfImage[][] {
-  if (!images.length) return [];
   const groups: PdfImage[][] = [];
   for (let i = 0; i < images.length; i += 2) groups.push(images.slice(i, i + 2));
   return groups;
+}
+
+type Part = { text?: string; binary?: Buffer };
+
+export function buildRondaPdf(ronda: Ronda, images: PdfImage[]): Buffer {
+  const textPages = packBlocks(reportBlocks(ronda));
+  const groups = evidenceGroups(images);
+  const objs: Part[][] = [[{ text: '<< /Type /Catalog /Pages 2 0 R >>' }], [{ text: 'P' }]];
+  const push = (obj: Part[]) => {
+    objs.push(obj);
+    return objs.length;
+  };
+  const refs: number[] = [];
+  const pages: Array<{ pageId: number; contentId: number; imageIds: number[] }> = [];
+
+  for (const lines of textPages) {
+    const stream = textStream(lines);
+    const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
+    const pageId = push([{ text: 'P' }]);
+    refs.push(pageId);
+    pages.push({ pageId, contentId, imageIds: [] });
+  }
+
+  for (const group of groups) {
+    const imageIds = group.map((image) =>
+      push([
+        {
+          text: `<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.bytes.length} >>\nstream\n`,
+        },
+        { binary: image.bytes },
+        { text: '\nendstream' },
+      ]),
+    );
+    const captionH = 28;
+    const topStart = 724;
+    const available = topStart - 48;
+    const maxH = Math.max(160, Math.floor(available / group.length) - captionH);
+    const chunks = [textStream(['EVIDENCIAS'], PAGE_TOP)];
+    let top = topStart;
+    for (let i = 0; i < group.length; i += 1) {
+      const drawn = drawImage(imageIds[i]!, group[i]!, 500, maxH, top);
+      if (!drawn) continue;
+      chunks.push(drawn.stream);
+      top = drawn.bottom - 6;
+    }
+    const stream = chunks.join('\n');
+    const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
+    const pageId = push([{ text: 'P' }]);
+    refs.push(pageId);
+    pages.push({ pageId, contentId, imageIds });
+  }
+
+  const fontId = push([{ text: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>' }]);
+  objs[1] = [{ text: `<< /Type /Pages /Kids [${refs.map((id) => `${id} 0 R`).join(' ')}] /Count ${refs.length} >>` }];
+  for (const page of pages) {
+    const xobj = page.imageIds.length
+      ? ` /XObject << ${page.imageIds.map((id) => `/Im${id} ${id} 0 R`).join(' ')} >>`
+      : '';
+    objs[page.pageId - 1] = [
+      {
+        text: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${page.contentId} 0 R /Resources << /Font << /F1 ${fontId} 0 R >>${xobj} >> >>`,
+      },
+    ];
+  }
+  const chunks: Buffer[] = [Buffer.from('%PDF-1.4\n', 'latin1')];
+  const offsets = [0];
+  for (let i = 0; i < objs.length; i += 1) {
+    offsets.push(chunks.reduce((sum, chunk) => sum + chunk.length, 0));
+    const parts: Buffer[] = [Buffer.from(`${i + 1} 0 obj\n`, 'latin1')];
+    for (const part of objs[i] ?? []) {
+      if (part.text) parts.push(Buffer.from(part.text, 'latin1'));
+      if (part.binary) parts.push(part.binary);
+    }
+    parts.push(Buffer.from('\nendobj\n', 'latin1'));
+    chunks.push(Buffer.concat(parts));
+  }
+  const xrefStart = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  for (let i = 1; i <= objs.length; i += 1) xref += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+  chunks.push(Buffer.from(xref, 'latin1'));
+  chunks.push(
+    Buffer.from(`trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`, 'latin1'),
+  );
+  return Buffer.concat(chunks);
 }
 
 export class ExportRondaPdf {
@@ -240,7 +358,7 @@ export class ExportRondaPdf {
     if (!ronda || (ronda.ownerId !== ownerId && ronda.assigneeId !== ownerId)) {
       throw new RondaNotFoundError(rondaId);
     }
-    const labels = new Map(ronda.answers.map((a) => [a.itemIndex, a.label] as const));
+    const labels = new Map(ronda.answers.map((answer) => [answer.itemIndex, answer.label] as const));
     const images: PdfImage[] = [];
     for (const photo of ronda.photos) {
       try {
@@ -258,84 +376,6 @@ export class ExportRondaPdf {
         /* skip missing or non-jpeg evidence */
       }
     }
-    return {
-      bytes: this.build([reportPage(ronda)], checklistPages(ronda), images),
-      filename: pdfFilename(ronda.id),
-    };
-  }
-
-  private build(reportPages: string[][], checklistPages: string[][], images: PdfImage[]): Buffer {
-    type Part = { text?: string; binary?: Buffer };
-    const objs: Part[][] = [];
-    const push = (parts: Part[]) => {
-      objs.push(parts);
-      return objs.length;
-    };
-    push([{ text: '<< /Type /Catalog /Pages 2 0 R >>' }]);
-    push([{ text: 'PAGES' }]);
-    const pages: { pageId: number; contentId: number; imageIds: number[] }[] = [];
-    const refs: number[] = [];
-
-    const addTextPage = (lines: string[]) => {
-      const stream = textStream(lines);
-      const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
-      const pageId = push([{ text: 'P' }]);
-      refs.push(pageId);
-      pages.push({ pageId, contentId, imageIds: [] });
-    };
-    for (const lines of reportPages) addTextPage(lines);
-    for (const lines of checklistPages) addTextPage(lines);
-
-    for (const group of evidenceGroups(images)) {
-      const imageIds = group.map((image) =>
-        push([
-          { text: `<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.bytes.length} >>\nstream\n` },
-          { binary: image.bytes },
-          { text: '\nendstream' },
-        ]),
-      );
-      const captionH = 28;
-      const available = 680;
-      const maxH = Math.max(160, Math.floor(available / group.length) - captionH);
-      const chunks = [textStream(['4. EVIDENCIAS'], 760)];
-      let top = 724;
-      for (let i = 0; i < group.length; i += 1) {
-        const drawn = drawImage(imageIds[i], group[i], 500, maxH, top);
-        chunks.push(drawn.stream);
-        top = drawn.bottom - 6;
-      }
-      const stream = chunks.join('\n');
-      const contentId = push([{ text: `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}\nendstream` }]);
-      const pageId = push([{ text: 'P' }]);
-      refs.push(pageId);
-      pages.push({ pageId, contentId, imageIds });
-    }
-
-    const fontId = push([{ text: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>' }]);
-    objs[1] = [{ text: `<< /Type /Pages /Kids [${refs.map((id) => `${id} 0 R`).join(' ')}] /Count ${refs.length} >>` }];
-    for (const page of pages) {
-      const xobj = page.imageIds.length
-        ? ` /XObject << ${page.imageIds.map((id) => `/Im${id} ${id} 0 R`).join(' ')} >>`
-        : '';
-      objs[page.pageId - 1] = [{ text: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${page.contentId} 0 R /Resources << /Font << /F1 ${fontId} 0 R >>${xobj} >> >>` }];
-    }
-    const chunks: Buffer[] = [Buffer.from('%PDF-1.4\n', 'latin1')];
-    const offsets = [0];
-    for (let i = 0; i < objs.length; i += 1) {
-      offsets.push(chunks.reduce((sum, chunk) => sum + chunk.length, 0));
-      const parts: Buffer[] = [Buffer.from(`${i + 1} 0 obj\n`, 'latin1')];
-      for (const part of objs[i]) {
-        if (part.text) parts.push(Buffer.from(part.text, 'latin1'));
-        if (part.binary) parts.push(part.binary);
-      }
-      parts.push(Buffer.from('\nendobj\n', 'latin1'));
-      chunks.push(Buffer.concat(parts));
-    }
-    const xrefStart = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-    for (let i = 1; i <= objs.length; i += 1) xref += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
-    chunks.push(Buffer.from(xref, 'latin1'));
-    chunks.push(Buffer.from(`trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`, 'latin1'));
-    return Buffer.concat(chunks);
+    return { bytes: buildRondaPdf(ronda, images), filename: pdfFilename(ronda.id) };
   }
 }

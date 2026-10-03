@@ -1,7 +1,9 @@
-import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:share_plus/share_plus.dart';
+
+import 'share_ronda_pdf_io.dart' if (dart.library.html) 'share_ronda_pdf_web.dart';
 
 String rondaPdfFilename(String rondaId) {
   final short = rondaId.length > 6 ? rondaId.substring(rondaId.length - 6) : rondaId;
@@ -14,16 +16,17 @@ Future<void> shareRondaPdf({
   required String text,
 }) async {
   final name = rondaPdfFilename(rondaId);
-  final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/$name');
-  await file.writeAsBytes(bytes, flush: true);
+  final XFile file;
+  if (kIsWeb) {
+    file = XFile.fromData(
+      Uint8List.fromList(bytes),
+      mimeType: 'application/pdf',
+      name: name,
+    );
+  } else {
+    file = await writeTempPdf(bytes, name);
+  }
   await SharePlus.instance.share(
-    ShareParams(
-      files: [
-        XFile(file.path, mimeType: 'application/pdf', name: name),
-      ],
-      text: text,
-      subject: name,
-    ),
+    ShareParams(files: [file], text: text, subject: name),
   );
 }

@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/application/rondas/ExportRondaPdf.test.ts",
     "seed": "tsx src/scripts/seed.ts",
     "eval:summaries": "tsx src/scripts/evalSummaries.ts",
     "report:weekly": "tsx src/scripts/weeklyReport.ts"
