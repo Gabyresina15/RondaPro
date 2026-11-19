@@ -22,7 +22,7 @@ flowchart TB
     Domain[Domain entities + ports]
     Persist[Mongo persistence]
     Sec[JWT + bcrypt]
-    LLM[OpenAI or heuristic summary]
+    LLM[Gemini or heuristic summary]
     Files[Local photo storage]
     HTTP --> UseCases --> Domain
     UseCases --> Persist
@@ -39,7 +39,7 @@ flowchart TB
 |-------|----------|----------------|
 | Domain | `apps/api/src/domain` | Entities + repository/token/hasher/storage/LLM ports |
 | Application | `apps/api/src/application` | Auth, templates, start/complete ronda, photos, summary |
-| Adapters | `apps/api/src/adapters` | Fastify HTTP, Mongoose, JWT, bcrypt, local files, OpenAI |
+| Adapters | `apps/api/src/adapters` | Fastify HTTP, Mongoose, JWT, bcrypt, local files, Gemini |
 | Mobile | `apps/mobile/lib` | Feature folders with data / domain / presentation |
 
 ## Monorepo layout
@@ -66,11 +66,11 @@ Copy `apps/api/.env.example` → `apps/api/.env`:
 | `PORT` | HTTP port | `3000` |
 | `CORS_ORIGIN` | CORS origin (`*` for local) | `*` |
 | `UPLOAD_DIR` | Photo storage directory | `./uploads` |
-| `OPENAI_API_KEY` | Optional. Enables real LLM summaries | `sk-...` |
-| `OPENAI_BASE_URL` | OpenAI-compatible base URL | `https://api.openai.com/v1` |
-| `OPENAI_MODEL` | Chat model | `gpt-4o-mini` |
+| `GEMINI_API_KEY` | Optional. Enables real LLM summaries | `AIza...` |
+| `GEMINI_MODEL` | Gemini model | `gemini-2.5-flash` |
+| `GEMINI_BASE_URL` | Optional Gemini API base URL | `https://generativelanguage.googleapis.com/v1beta` |
 
-If `OPENAI_API_KEY` is missing, completion still works and stores a **heuristic** summary (`summarySource: "heuristic"`).
+If `GEMINI_API_KEY` is missing, completion still works and stores a **heuristic** summary (`summarySource: "heuristic"`).
 
 ## Run the API
 
@@ -206,7 +206,7 @@ Completion rules:
 - at least **2 photos** on the ronda
 - required template items must be answered
 - required `photo` items need at least one attached photo
-- one summary is generated (`llm` if `OPENAI_API_KEY` is set, otherwise `heuristic`)
+- one summary is generated (`llm` if `GEMINI_API_KEY` is set, otherwise `heuristic`)
 
 ## Push slice #2
 
